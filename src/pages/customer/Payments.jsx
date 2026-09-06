@@ -4,10 +4,10 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12 } from "../../utils/dateUtils";
 
 function formatTime(value) {
-  if (!value) return "";
-  return String(value).slice(0, 5);
+  return formatTime12(value);
 }
 
 export function Payments() {

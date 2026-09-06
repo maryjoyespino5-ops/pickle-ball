@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTimeRange12 } from "../../utils/dateUtils";
 export function BookingCard({ booking }) {
   return (
     <article className="booking-card">
@@ -19,8 +20,7 @@ export function BookingCard({ booking }) {
           <span className="eyebrow">{booking.id}</span>
           <h3>{booking.courtName}</h3>
           <p>
-            {booking.time} -{" "}
-            {String(Number(booking.time.slice(0, 2)) + 1).padStart(2, "0")}:00 ·{" "}
+            {formatTimeRange12(booking.time, booking.duration || 1)} ·{" "}
             {booking.duration} hour
           </p>
         </div>

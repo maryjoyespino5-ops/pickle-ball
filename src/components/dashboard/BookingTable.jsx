@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12 } from "../../utils/dateUtils";
 export function BookingTable({ bookings = [], onCancel }) {
   return (
     <div className="table-wrap">
@@ -24,7 +25,7 @@ export function BookingTable({ bookings = [], onCancel }) {
                 {booking.date}
                 <br />
                 <small>
-                  {booking.time} · {booking.duration} hour
+                              {formatTime12(booking.time)} · {booking.duration} hour
                 </small>
               </td>
               <td>{formatCurrency(booking.amount)}</td>

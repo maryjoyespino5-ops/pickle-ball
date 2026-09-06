@@ -8,6 +8,7 @@ import { Modal } from "../../components/common/Modal";
 import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12, formatTimeRange12 } from "../../utils/dateUtils";
 
 import { useAuth } from "../../hooks/useAuth";
 
@@ -106,7 +107,10 @@ export function Dashboard() {
                     }
                     detail={
                       courtBooking(court.id)
-                        ? `${courtBooking(court.id).time} - ${String(Number(courtBooking(court.id).time.slice(0, 2)) + courtBooking(court.id).duration).padStart(2, "0")}:00`
+                        ? formatTimeRange12(
+                            courtBooking(court.id).time,
+                            courtBooking(court.id).duration,
+                          )
                         : court.status === "maintenance"
                           ? "Under maintenance"
                           : "Ready for booking"
@@ -162,7 +166,7 @@ export function Dashboard() {
                 ? `Booking cancelled · ${booking.customer}`
                 : `New booking ${booking.id} · ${booking.customer}`}
               <small>
-                {booking.courtName} · {booking.date} {booking.time}
+                {booking.courtName} · {booking.date} {formatTime12(booking.time)}
               </small>
             </Link>
           ))}

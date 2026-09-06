@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "../../components/common/Modal";
 import { paymentService } from "../../services/paymentService";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12 } from "../../utils/dateUtils";
 export function Payments() {
   const [payments, setPayments] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -140,7 +141,7 @@ export function Payments() {
             <p>
               <strong>{selected.customer}</strong>
               <br />
-              {selected.courtName} · {selected.date} · {selected.time}
+              {selected.courtName} · {selected.date} · {formatTime12(selected.time)}
             </p>
             <div className="payment-total">
               {formatCurrency(selected.amount)}

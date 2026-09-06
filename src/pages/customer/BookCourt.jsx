@@ -7,7 +7,7 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { courtService } from "../../services/courtService";
 import { bookingService } from "../../services/bookingService";
 import { formatCurrency } from "../../utils/currencyUtils";
-import { todayISO } from "../../utils/dateUtils";
+import { formatTimeRange12, todayISO } from "../../utils/dateUtils";
 import { HOURLY_RATE } from "../../lib/constants";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 
@@ -135,14 +135,7 @@ export function BookCourt() {
             </div>
             <div className="summary-row">
               <span>Time</span>
-              <strong>
-                {selected.time} -{" "}
-                {String(Number(selected.time.slice(0, 2)) + 1).padStart(
-                  2,
-                  "0",
-                )}
-                :00
-              </strong>
+              <strong>{formatTimeRange12(selected.time)}</strong>
             </div>
             <div className="summary-row">
               <span>Duration</span>

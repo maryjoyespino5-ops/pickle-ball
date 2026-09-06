@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTimeRange12 } from "../../utils/dateUtils";
 export function BookingDetails({ booking, onAction, onReschedule }) {
   return (
     <div className="booking-details">
@@ -17,13 +18,7 @@ export function BookingDetails({ booking, onAction, onReschedule }) {
           <small>Court</small>
           <strong>{booking.courtName}</strong>
           <span>{booking.date}</span>
-          <span>
-            {booking.time} -{" "}
-            {String(
-              Number(booking.time.slice(0, 2)) + booking.duration,
-            ).padStart(2, "0")}
-            :00
-          </span>
+          <span>{formatTimeRange12(booking.time, booking.duration)}</span>
         </div>
         <div>
           <small>Payment</small>

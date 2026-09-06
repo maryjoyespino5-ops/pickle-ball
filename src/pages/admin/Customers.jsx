@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Modal } from "../../components/common/Modal";
 import { customerService } from "../../services/customerService";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12 } from "../../utils/dateUtils";
 export function Customers() {
   const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState([]);
@@ -136,7 +137,7 @@ export function Customers() {
                           </td>
                           <td>{booking.courtName}</td>
                           <td>
-                            {booking.date} {booking.time}
+                            {booking.date} {formatTime12(booking.time)}
                           </td>
                           <td>{formatCurrency(booking.amount)}</td>
                           <td>

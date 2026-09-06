@@ -5,6 +5,7 @@ import { BookingDetails } from "../../components/booking/BookingDetails";
 import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { HOURLY_RATE } from "../../lib/constants";
+import { formatTime12 } from "../../utils/dateUtils";
 export function Calendar() {
   const todayIso = (() => {
     const now = new Date();
@@ -108,7 +109,7 @@ export function Calendar() {
             <form className="form-card modal-form" onSubmit={submit}>
               <p>
                 Reserve <strong>{slot.court.name}</strong> at{" "}
-                <strong>{slot.time}</strong> on {date}.
+                <strong>{formatTime12(slot.time)}</strong> on {date}.
               </p>
               <label>
                 Customer name

@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTime12 } from "../../utils/dateUtils";
 export function AdminBookingTable({
   bookings = [],
   onView,
@@ -36,7 +37,7 @@ export function AdminBookingTable({
               <td>{booking.courtName}</td>
               <td>
                 {booking.date}
-                <small>{booking.time}</small>
+                <small>{formatTime12(booking.time)}</small>
               </td>
               <td>{booking.duration} hr</td>
               <td>{formatCurrency(booking.amount)}</td>

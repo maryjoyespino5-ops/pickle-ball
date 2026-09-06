@@ -4,6 +4,7 @@ import { AdminBookingTable } from "../../components/dashboard/AdminBookingTable"
 import { BookingDetails } from "../../components/booking/BookingDetails";
 import { Modal } from "../../components/common/Modal";
 import { bookingService } from "../../services/bookingService";
+import { formatTime12 } from "../../utils/dateUtils";
 export function Bookings() {
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
@@ -249,7 +250,9 @@ export function Bookings() {
                   "20:00",
                   "21:00",
                 ].map((time) => (
-                  <option key={time}>{time}</option>
+                  <option key={time} value={time}>
+                    {formatTime12(time)}
+                  </option>
                 ))}
               </select>
             </label>

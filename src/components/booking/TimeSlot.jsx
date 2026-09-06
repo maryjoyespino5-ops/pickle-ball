@@ -1,3 +1,5 @@
+import { formatTime12 } from "../../utils/dateUtils";
+
 export function TimeSlot({
   time,
   available = true,
@@ -10,7 +12,7 @@ export function TimeSlot({
       className={`time-slot ${selected ? "selected" : ""}`}
       disabled={!available && !onClick}
       onClick={onClick}>
-      <span>{time}</span>
+      <span>{formatTime12(time)}</span>
       <small>{available ? "Open" : "Booked"}</small>
     </button>
   );

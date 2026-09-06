@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/currencyUtils";
+import { formatTimeRange12 } from "../../utils/dateUtils";
 export function BookingSummary({ booking, onContinue }) {
   return (
     <section className="booking-summary">
@@ -18,7 +19,7 @@ export function BookingSummary({ booking, onContinue }) {
         <span>Time</span>
         <strong>
           {booking?.time
-            ? `${booking.time} - ${String(Number(booking.time.slice(0, 2)) + 1).padStart(2, "0")}:00`
+            ? formatTimeRange12(booking.time, booking.duration || 1)
             : "Choose a time"}
         </strong>
       </div>
