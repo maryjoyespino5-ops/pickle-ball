@@ -1,10 +1,12 @@
 import { CourtCard } from "../../components/courts/CourtCard";
 import { useCourts } from "../../hooks/useCourts";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 export function Courts() {
   const { courts, loading, error } = useCourts();
+  useScrollReveal();
   return (
     <main className="page-wrap">
-      <div className="page-intro">
+      <div className="page-intro reveal">
         <span className="eyebrow">THE CLUB</span>
         <h1>
           Two courts.
@@ -20,13 +22,13 @@ export function Courts() {
           Courts are temporarily unavailable. Please try again later.
         </p>
       ) : (
-        <div className="court-grid">
+        <div className="court-grid reveal">
           {courts.map((court) => (
             <CourtCard key={court.id} court={court} />
           ))}
         </div>
       )}
-      <section className="info-band">
+      <section className="info-band reveal">
         <span className="section-index">EVERYTHING YOU NEED</span>
         <p>
           Open from 7am to 10pm daily with easy access, quality surfaces, and a

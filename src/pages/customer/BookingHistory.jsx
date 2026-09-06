@@ -2,8 +2,10 @@ import { useState } from "react";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { useBookings } from "../../hooks/useBookings";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 export function BookingHistory() {
   const { bookings, loading, error } = useBookings();
+  useScrollReveal();
   const [filter, setFilter] = useState("all");
   const history = bookings.filter(
     (booking) =>

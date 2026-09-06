@@ -3,6 +3,7 @@ import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { useAuth } from "../../hooks/useAuth";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 
 function initials(name = "") {
   return name
@@ -14,6 +15,7 @@ function initials(name = "") {
 }
 
 export function Profile() {
+  useScrollReveal();
   const { user, updateProfile, updatePassword } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);

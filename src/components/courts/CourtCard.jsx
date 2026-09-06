@@ -5,6 +5,8 @@ export function CourtCard({ court }) {
   return (
     <article className={`court-card ${court.accent}`}>
       <div className="court-card-art">
+        <span className="court-net" aria-hidden="true" />
+        <span className="court-ball" aria-hidden="true" />
         <span className="court-badge">AVAILABLE</span>
         <span className="court-number">
           {court.name.replace("Court ", "0")}

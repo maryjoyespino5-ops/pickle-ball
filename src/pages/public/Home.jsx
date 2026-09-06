@@ -2,11 +2,18 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/common/Button";
 import { CourtCard } from "../../components/courts/CourtCard";
 import { useCourts } from "../../hooks/useCourts";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { HOURLY_RATE } from "../../lib/constants";
 import { formatCurrency } from "../../utils/currencyUtils";
 
 export function Home() {
-  const { courts } = useCourts();
+  const { courts, loading } = useCourts();
+  useScrollReveal();
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   return (
     <main className="home-page">
       <section className="home-hero">
@@ -34,6 +41,8 @@ export function Home() {
           <div className="court-lines">
             <span className="net" />
             <span className="ball">•</span>
+            <span className="hero-ball-trail" aria-hidden="true" />
+            <span className="hero-ball" aria-hidden="true" />
           </div>
           <p>
             OPEN DAILY
@@ -42,7 +51,7 @@ export function Home() {
           </p>
         </div>
       </section>
-      <section className="intro-section">
+      <section className="intro-section reveal">
         <div>
           <span className="section-index">01 / THE CLUB</span>
           <h2>
@@ -57,7 +66,7 @@ export function Home() {
           waiting around.
         </p>
       </section>
-      <section className="home-section" id="courts">
+      <section className="home-section reveal" id="courts">
         <div className="section-heading">
           <div>
             <span className="eyebrow">THE COURTS</span>
@@ -72,12 +81,16 @@ export function Home() {
           </Link>
         </div>
         <div className="court-grid">
-          {courts.map((court) => (
-            <CourtCard key={court.id} court={court} />
-          ))}
+          {loading ? (
+            <p className="loading-state">Loading courts...</p>
+          ) : courts.length === 0 ? (
+            <p className="empty-panel">Courts are coming soon. Check back shortly!</p>
+          ) : (
+            courts.map((court) => <CourtCard key={court.id} court={court} />)
+          )}
         </div>
       </section>
-      <section className="availability-preview">
+      <section className="availability-preview reveal">
         <div>
           <span className="eyebrow">LIVE AVAILABILITY</span>
           <h2>
@@ -95,7 +108,7 @@ export function Home() {
         <div className="availability-mini">
           <div className="mini-head">
             <strong>Today</strong>
-            <span>September 18, 2026</span>
+            <span>{today}</span>
           </div>
           <div className="mini-row">
             <span>Court 1</span>
@@ -116,7 +129,7 @@ export function Home() {
           </small>
         </div>
       </section>
-      <section className="pricing-teaser" id="pricing">
+      <section className="pricing-teaser reveal" id="pricing">
         <span className="eyebrow">SIMPLE PRICING</span>
         <h2>
           One great hour.

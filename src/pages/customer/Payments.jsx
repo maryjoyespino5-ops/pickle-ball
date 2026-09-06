@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { formatCurrency } from "../../utils/currencyUtils";
 
 function formatTime(value) {
@@ -10,6 +11,7 @@ function formatTime(value) {
 }
 
 export function Payments() {
+  useScrollReveal();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

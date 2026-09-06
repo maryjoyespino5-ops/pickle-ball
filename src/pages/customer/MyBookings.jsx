@@ -4,8 +4,10 @@ import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { useBookings } from "../../hooks/useBookings";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 export function MyBookings() {
   const { bookings, loading, error, cancel } = useBookings();
+  useScrollReveal();
   const location = useLocation();
   const [justBooked] = useState(() => Boolean(location.state?.justBooked));
   const [notice, setNotice] = useState(false);

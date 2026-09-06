@@ -5,6 +5,7 @@ import { BookingCard } from "../../components/booking/BookingCard";
 import { useAuth } from "../../hooks/useAuth";
 import { useBookings } from "../../hooks/useBookings";
 import { useCourts } from "../../hooks/useCourts";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 
 function favoriteCourt(bookings, courts) {
   const counts = {};
@@ -19,6 +20,10 @@ export function Dashboard() {
   const { user } = useAuth();
   const { bookings } = useBookings();
   const { courts } = useCourts();
+  useScrollReveal();
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const next =
     bookings.find((booking) => booking.status === "upcoming") ||
     bookings.find((booking) => booking.status === "confirmed");
@@ -27,14 +32,16 @@ export function Dashboard() {
       <div className="dashboard-heading">
         <div>
           <span className="eyebrow">YOUR DASHBOARD</span>
-          <h1>Good morning, {user?.fullName?.split(" ")[0] || "player"}.</h1>
+          <h1>
+            {greeting}, {user?.fullName?.split(" ")[0] || "player"}.
+          </h1>
           <p>Ready for your next game?</p>
         </div>
         <Button to="/book">
           Book a court <span aria-hidden="true">-&gt;</span>
         </Button>
       </div>
-      <div className="stat-grid">
+      <div className="stat-grid reveal">
         <StatCard label="Total bookings" value={bookings.length} />
         <StatCard
           label="Hours played"
@@ -42,7 +49,7 @@ export function Dashboard() {
         />
         <StatCard label="Favorite court" value={favoriteCourt(bookings, courts)} />
       </div>
-      <div className="dashboard-grid">
+      <div className="dashboard-grid reveal">
         <section>
           <div className="section-heading small">
             <div>

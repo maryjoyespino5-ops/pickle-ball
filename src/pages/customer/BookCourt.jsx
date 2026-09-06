@@ -9,9 +9,11 @@ import { bookingService } from "../../services/bookingService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { todayISO } from "../../utils/dateUtils";
 import { HOURLY_RATE } from "../../lib/constants";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 
 export function BookCourt() {
   const navigate = useNavigate();
+  useScrollReveal();
   const [date, setDate] = useState(todayISO);
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState({});
