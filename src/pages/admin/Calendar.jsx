@@ -6,7 +6,11 @@ import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { HOURLY_RATE } from "../../lib/constants";
 export function Calendar() {
-  const [date, setDate] = useState("2026-09-18");
+  const todayIso = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  })();
+  const [date, setDate] = useState(todayIso);
   const [courts, setCourts] = useState([]);
   const [slot, setSlot] = useState(null);
   const [form, setForm] = useState({
@@ -69,7 +73,7 @@ export function Calendar() {
         <input
           type="date"
           value={date}
-          min="2026-09-18"
+          min={todayIso}
           onChange={(event) => setDate(event.target.value)}
         />
       </div>

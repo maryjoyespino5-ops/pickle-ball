@@ -1,13 +1,23 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "../../components/common/Button";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { useBookings } from "../../hooks/useBookings";
 export function MyBookings() {
-  const { bookings, loading, cancel } = useBookings();
+  const { bookings, loading, error, cancel } = useBookings();
+  const location = useLocation();
+  const [justBooked] = useState(() => Boolean(location.state?.justBooked));
   const [notice, setNotice] = useState(false);
+  const [cancelError, setCancelError] = useState("");
   const handleCancel = async (id) => {
-    await cancel(id);
-    setNotice(true);
+    setCancelError("");
+    try {
+      await cancel(id);
+      setNotice(true);
+    } catch (err) {
+      setCancelError(err.message || "Could not cancel the booking.");
+    }
   };
   return (
     <main className="dashboard-page">
@@ -21,9 +31,13 @@ export function MyBookings() {
           Book a court <span aria-hidden="true">-&gt;</span>
         </Button>
       </div>
+      {justBooked && (
+        <div className="success-message">Your court is booked. See you on court!</div>
+      )}
       {notice && (
         <div className="success-message">Booking cancelled successfully.</div>
       )}
+      {cancelError && <ErrorMessage message={cancelError} />}
       {loading ? (
         <p className="loading-state">Loading bookings...</p>
       ) : (

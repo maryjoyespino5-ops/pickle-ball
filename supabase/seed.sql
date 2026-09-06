@@ -1,1 +1,3 @@
--- Local seed data will be added with the first schema migration.
+-- Seed data now lives in the schema migrations:
+--   supabase/migrations/0002_courts.sql  -> exactly 2 courts at ₱300/hour
+-- New customers get a profile automatically via the trigger in 0001_profiles.sql.

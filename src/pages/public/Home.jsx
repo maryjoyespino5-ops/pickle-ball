@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "../../components/common/Button";
 import { CourtCard } from "../../components/courts/CourtCard";
-import { COURTS, HOURLY_RATE } from "../../lib/constants";
+import { useCourts } from "../../hooks/useCourts";
+import { HOURLY_RATE } from "../../lib/constants";
 import { formatCurrency } from "../../utils/currencyUtils";
 
 export function Home() {
+  const { courts } = useCourts();
   return (
     <main className="home-page">
       <section className="home-hero">
@@ -70,7 +72,7 @@ export function Home() {
           </Link>
         </div>
         <div className="court-grid">
-          {COURTS.map((court) => (
+          {courts.map((court) => (
             <CourtCard key={court.id} court={court} />
           ))}
         </div>

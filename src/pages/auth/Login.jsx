@@ -1,15 +1,28 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "../../components/common/Button";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { useAuth } from "../../hooks/useAuth";
 export function Login() {
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("mia@example.com");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const submit = async (event) => {
     event.preventDefault();
-    const user = await login({ email });
-    navigate(user.role === "admin" ? "/admin" : "/dashboard");
+    setError("");
+    setSubmitting(true);
+    try {
+      const user = await login({ email, password });
+      navigate(user?.role === "admin" ? "/admin" : "/dashboard");
+    } catch (err) {
+      setError(
+        err.message || "Unable to sign in. Check your credentials and try again.",
+      );
+      setSubmitting(false);
+    }
   };
   return (
     <main className="auth-page">
@@ -33,8 +46,14 @@ export function Login() {
           </label>
           <label>
             Password
-            <input type="password" defaultValue="password" required />
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
           </label>
+          {error && <ErrorMessage message={error} />}
           <div className="form-meta">
             <label className="check-label">
               <input type="checkbox" /> Remember me
@@ -42,7 +61,7 @@ export function Login() {
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
           <Button type="submit">
-            {loading ? "Signing in..." : "Sign in"}{" "}
+            {submitting ? "Signing in..." : "Sign in"}{" "}
             <span aria-hidden="true">-&gt;</span>
           </Button>
         </form>

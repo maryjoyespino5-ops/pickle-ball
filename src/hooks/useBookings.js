@@ -3,10 +3,13 @@ import { bookingService } from "../services/bookingService";
 export function useBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   useEffect(() => {
+    setLoading(true);
     bookingService
       .getMyBookings()
       .then(setBookings)
+      .catch((err) => setError(err))
       .finally(() => setLoading(false));
   }, []);
   const cancel = async (id) => {
@@ -15,5 +18,5 @@ export function useBookings() {
       current.map((booking) => (booking.id === id ? updated : booking)),
     );
   };
-  return { bookings, loading, error: null, cancel };
+  return { bookings, loading, error, cancel };
 }

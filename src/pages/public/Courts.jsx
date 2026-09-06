@@ -1,6 +1,7 @@
 import { CourtCard } from "../../components/courts/CourtCard";
-import { COURTS } from "../../lib/constants";
+import { useCourts } from "../../hooks/useCourts";
 export function Courts() {
+  const { courts, loading, error } = useCourts();
   return (
     <main className="page-wrap">
       <div className="page-intro">
@@ -12,11 +13,19 @@ export function Courts() {
         </h1>
         <p>Professional-quality courts, kept ready for your next game.</p>
       </div>
-      <div className="court-grid">
-        {COURTS.map((court) => (
-          <CourtCard key={court.id} court={court} />
-        ))}
-      </div>
+      {loading ? (
+        <p className="loading-state">Loading courts...</p>
+      ) : error ? (
+        <p className="empty-panel">
+          Courts are temporarily unavailable. Please try again later.
+        </p>
+      ) : (
+        <div className="court-grid">
+          {courts.map((court) => (
+            <CourtCard key={court.id} court={court} />
+          ))}
+        </div>
+      )}
       <section className="info-band">
         <span className="section-index">EVERYTHING YOU NEED</span>
         <p>

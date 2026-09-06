@@ -1,14 +1,26 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "../../components/common/Button";
-import { authService } from "../../services/authService";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
+import { useAuth } from "../../hooks/useAuth";
 export function ForgotPassword() {
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const submit = async (event) => {
     event.preventDefault();
-    await authService.requestPasswordReset(email);
-    setSent(true);
+    setError("");
+    setSubmitting(true);
+    try {
+      await forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      setError(err.message || "Could not send the reset link. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <main className="auth-page">
@@ -35,8 +47,10 @@ export function ForgotPassword() {
                 required
               />
             </label>
+            {error && <ErrorMessage message={error} />}
             <Button type="submit">
-              Send reset link <span aria-hidden="true">-&gt;</span>
+              {submitting ? "Sending..." : "Send reset link"}{" "}
+              <span aria-hidden="true">-&gt;</span>
             </Button>
           </form>
         )}

@@ -18,7 +18,7 @@ export function CourtCard({ court }) {
         </div>
         <div className="court-card-footer">
           <strong>
-            {formatCurrency(HOURLY_RATE)}
+            {formatCurrency(court.price || HOURLY_RATE)}
             <small>/ hour</small>
           </strong>
           <Link className="arrow-link" to="/book">

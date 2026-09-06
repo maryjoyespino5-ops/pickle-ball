@@ -1,39 +1,63 @@
 import { bookingService } from "./bookingService";
+
 export async function getReport(filters = {}) {
-  let bookings = await bookingService.getAllBookings({
+  const bookings = await bookingService.getAllBookings({
     court: filters.court || "all",
     status: filters.status || "all",
     paymentStatus: filters.paymentStatus || "all",
   });
-  if (filters.from)
-    bookings = bookings.filter((booking) => booking.date >= filters.from);
-  if (filters.to)
-    bookings = bookings.filter((booking) => booking.date <= filters.to);
-  const paid = bookings.filter((item) => item.paymentStatus === "paid");
-  const pending = bookings.filter((item) => item.paymentStatus === "pending");
+
+  // Date-range filter (booking reports / revenue reports / court performance).
+  const ranged = bookings.filter(
+    (booking) =>
+      (!filters.from || booking.date >= filters.from) &&
+      (!filters.to || booking.date <= filters.to),
+  );
+
+  const paid = ranged.filter((item) => item.paymentStatus === "paid");
+  const pending = ranged.filter((item) => item.paymentStatus === "pending");
+
+  // Court performance is aggregated from the real court IDs in the data.
+  const courtMap = new Map();
+  ranged.forEach((booking) => {
+    const entry =
+      courtMap.get(booking.courtId) ||
+      { name: booking.courtName, bookings: 0, revenue: 0 };
+    entry.bookings += 1;
+    entry.revenue += Number(booking.amount) || 0;
+    courtMap.set(booking.courtId, entry);
+  });
+  const courtPerformance = [...courtMap.values()];
+  const maxCourtBookings = Math.max(1, ...courtPerformance.map((c) => c.bookings));
+  courtPerformance.forEach((court) => {
+    court.share = Math.round((court.bookings / maxCourtBookings) * 100);
+  });
+
+  // Real bookings-per-day count for the last 7 days.
+  const trend = [];
+  const now = new Date();
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const day = new Date(now);
+    day.setDate(now.getDate() - offset);
+    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    trend.push(ranged.filter((booking) => booking.date === key).length);
+  }
+
   return {
-    total: bookings.length,
-    confirmed: bookings.filter((item) => item.status === "confirmed").length,
-    completed: bookings.filter((item) => item.status === "completed").length,
-    cancelled: bookings.filter((item) => item.status === "cancelled").length,
-    pending: bookings.filter((item) => item.status === "pending").length,
-    revenue: bookings.reduce((sum, item) => sum + item.amount, 0),
-    paidRevenue: paid.reduce((sum, item) => sum + item.amount, 0),
-    pendingRevenue: pending.reduce((sum, item) => sum + item.amount, 0),
-    courtPerformance: [
-      {
-        name: "Court 1",
-        bookings: bookings.filter((item) => item.courtId === "court-1").length,
-      },
-      {
-        name: "Court 2",
-        bookings: bookings.filter((item) => item.courtId === "court-2").length,
-      },
-    ],
-    trend: bookings.length
-      ? [3, 5, 4, 7, 6, 8, Math.min(9, bookings.length)]
-      : [0, 0, 0, 0, 0, 0, 0],
-    rows: bookings,
+    total: ranged.length,
+    confirmed: ranged.filter((item) => item.status === "confirmed").length,
+    completed: ranged.filter((item) => item.status === "completed").length,
+    cancelled: ranged.filter((item) => item.status === "cancelled").length,
+    pending: ranged.filter((item) => item.status === "pending").length,
+    revenue: ranged.reduce((sum, item) => sum + (Number(item.amount) || 0), 0),
+    paidRevenue: paid.reduce((sum, item) => sum + (Number(item.amount) || 0), 0),
+    pendingRevenue: pending.reduce(
+      (sum, item) => sum + (Number(item.amount) || 0),
+      0,
+    ),
+    courtPerformance,
+    trend,
+    rows: ranged,
   };
 }
 export const reportService = { getReport };

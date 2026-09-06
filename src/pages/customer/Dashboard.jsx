@@ -4,10 +4,24 @@ import { StatCard } from "../../components/dashboard/StatCard";
 import { BookingCard } from "../../components/booking/BookingCard";
 import { useAuth } from "../../hooks/useAuth";
 import { useBookings } from "../../hooks/useBookings";
+import { useCourts } from "../../hooks/useCourts";
+
+function favoriteCourt(bookings, courts) {
+  const counts = {};
+  bookings.forEach((booking) => {
+    counts[booking.courtName] = (counts[booking.courtName] || 0) + 1;
+  });
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return top ? top[0] : courts[0]?.name || "—";
+}
+
 export function Dashboard() {
   const { user } = useAuth();
   const { bookings } = useBookings();
-  const next = bookings.find((booking) => booking.status === "upcoming");
+  const { courts } = useCourts();
+  const next =
+    bookings.find((booking) => booking.status === "upcoming") ||
+    bookings.find((booking) => booking.status === "confirmed");
   return (
     <main className="dashboard-page">
       <div className="dashboard-heading">
@@ -26,7 +40,7 @@ export function Dashboard() {
           label="Hours played"
           value={`${bookings.filter((item) => item.status === "completed").length}h`}
         />
-        <StatCard label="Favorite court" value="Court 1" />
+        <StatCard label="Favorite court" value={favoriteCourt(bookings, courts)} />
       </div>
       <div className="dashboard-grid">
         <section>

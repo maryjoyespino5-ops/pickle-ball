@@ -176,7 +176,7 @@ export function Reports() {
             <div className="performance-row" key={court.name}>
               <span>{court.name}</span>
               <strong>{court.bookings} bookings</strong>
-              <i style={{ width: `${court.bookings}%` }} />
+              <i style={{ width: `${court.share || 0}%` }} />
             </div>
           ))}
         </div>

@@ -1,20 +1,75 @@
 import { useState } from "react";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { useAuth } from "../../hooks/useAuth";
+
+function initials(name = "") {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
 export function Profile() {
-  const { user } = useAuth();
+  const { user, updateProfile, updatePassword } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
   const [profile, setProfile] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
     phone: user?.phone || "",
   });
+  const [password, setPassword] = useState({ current: "", next: "", confirm: "" });
   const update = (key, value) => {
     setProfile((current) => ({ ...current, [key]: value }));
     setSaved(false);
+  };
+  const save = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      await updateProfile({ fullName: profile.fullName, phone: profile.phone });
+      setEditing(false);
+      setSaved(true);
+    } catch (err) {
+      setError(err.message || "Could not save your profile.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const openPassword = () => {
+    setPasswordError("");
+    setPasswordNotice("");
+    setPasswordOpen(true);
+  };
+  const submitPassword = async (event) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordNotice("");
+    if (password.next !== password.confirm) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (password.next.length < 8) {
+      setPasswordError("New password must be at least 8 characters long.");
+      return;
+    }
+    try {
+      await updatePassword(password.next);
+      setPassword({ current: "", next: "", confirm: "" });
+      setPasswordNotice("Password updated. Use it the next time you sign in.");
+    } catch (err) {
+      setPasswordError(err.message || "Unable to update your password.");
+    }
   };
   return (
     <main className="dashboard-page profile-page">
@@ -26,15 +81,18 @@ export function Profile() {
         </div>
         <Button
           variant="outline"
-          onClick={() => {
-            setEditing(!editing);
-            setSaved(!editing);
+          onClick={(event) => {
+            if (editing) {
+              save(event);
+            } else {
+              setEditing(true);
+            }
           }}>
-          {editing ? "Save changes" : "Edit profile"}
+          {editing ? (saving ? "Saving..." : "Save changes") : "Edit profile"}
         </Button>
       </div>
       <section className="profile-card">
-        <div className="avatar">MS</div>
+        <div className="avatar">{initials(user?.fullName)}</div>
         <div className="profile-fields">
           <label>
             Full name
@@ -63,6 +121,7 @@ export function Profile() {
           </label>
         </div>
       </section>
+      {error && <ErrorMessage message={error} />}
       <section className="password-row">
         <div>
           <span className="eyebrow">SECURITY</span>
@@ -71,7 +130,7 @@ export function Profile() {
         </div>
         <button
           className="button outline"
-          onClick={() => setPasswordOpen(true)}>
+          onClick={openPassword}>
           Change password
         </button>
       </section>
@@ -82,25 +141,35 @@ export function Profile() {
       )}
       {passwordOpen && (
         <Modal title="Change password" onClose={() => setPasswordOpen(false)}>
-          <form
-            className="form-card modal-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setPasswordOpen(false);
-              setSaved(true);
-            }}>
-            <label>
-              Current password
-              <input type="password" required />
-            </label>
+          <form className="form-card modal-form" onSubmit={submitPassword}>
             <label>
               New password
-              <input type="password" minLength="8" required />
+              <input
+                type="password"
+                minLength="8"
+                value={password.next}
+                onChange={(event) =>
+                  setPassword({ ...password, next: event.target.value })
+                }
+                required
+              />
             </label>
             <label>
               Confirm password
-              <input type="password" minLength="8" required />
+              <input
+                type="password"
+                minLength="8"
+                value={password.confirm}
+                onChange={(event) =>
+                  setPassword({ ...password, confirm: event.target.value })
+                }
+                required
+              />
             </label>
+            {passwordNotice && (
+              <div className="success-message">{passwordNotice}</div>
+            )}
+            {passwordError && <ErrorMessage message={passwordError} />}
             <button className="button" type="submit">
               Update password
             </button>

@@ -2,17 +2,28 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookingSummary } from "../../components/booking/BookingSummary";
 import { TimeSlot } from "../../components/booking/TimeSlot";
+import { Modal } from "../../components/common/Modal";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { courtService } from "../../services/courtService";
+import { bookingService } from "../../services/bookingService";
+import { formatCurrency } from "../../utils/currencyUtils";
+import { todayISO } from "../../utils/dateUtils";
 import { HOURLY_RATE } from "../../lib/constants";
+
 export function BookCourt() {
   const navigate = useNavigate();
-  const [date, setDate] = useState("2026-09-18");
+  const [date, setDate] = useState(todayISO);
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState({});
+  const [confirming, setConfirming] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
+
   useEffect(() => {
     courtService.getAvailability(date).then(setCourts);
     setSelected({});
   }, [date]);
+
   const selectedCourt = courts.find((court) => court.id === selected.courtId);
   const booking =
     selectedCourt && selected.time
@@ -21,9 +32,27 @@ export function BookCourt() {
           courtName: selectedCourt.name,
           date,
           time: selected.time,
-          amount: HOURLY_RATE,
+          amount: selectedCourt.price || HOURLY_RATE,
         }
       : { date };
+
+  const handleConfirm = async () => {
+    if (!selectedCourt || !selected.time) return;
+    setCreating(true);
+    setConfirmError("");
+    try {
+      await bookingService.createBooking({
+        courtId: selectedCourt.id,
+        date,
+        time: selected.time,
+      });
+      navigate("/my-bookings", { state: { justBooked: true } });
+    } catch (err) {
+      setConfirmError(err.message || "Could not confirm booking. Try again.");
+      setCreating(false);
+    }
+  };
+
   return (
     <main className="book-page">
       <div className="page-intro compact">
@@ -42,7 +71,7 @@ export function BookCourt() {
             Choose a date
             <input
               type="date"
-              min="2026-09-18"
+              min={todayISO()}
               value={date}
               onChange={(event) => setDate(event.target.value)}
             />
@@ -70,10 +99,14 @@ export function BookCourt() {
                         selected.courtId === court.id &&
                         selected.time === slot.time
                       }
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelected({ courtId: court.id, time: slot.time });
-                      }}
+                      onClick={
+                        slot.available
+                          ? (event) => {
+                              event.stopPropagation();
+                              setSelected({ courtId: court.id, time: slot.time });
+                            }
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -83,11 +116,51 @@ export function BookCourt() {
         </section>
         <BookingSummary
           booking={booking}
-          onContinue={() =>
-            navigate("/my-bookings", { state: { justBooked: true, booking } })
-          }
+          onContinue={() => setConfirming(true)}
         />
       </div>
+
+      {confirming && selectedCourt && selected.time && (
+        <Modal title="Confirm your booking" onClose={() => setConfirming(false)}>
+          <div className="form-card modal-form">
+            <div className="summary-row">
+              <span>Court</span>
+              <strong>{selectedCourt.name}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Date</span>
+              <strong>{date}</strong>
+            </div>
+            <div className="summary-row">
+              <span>Time</span>
+              <strong>
+                {selected.time} -{" "}
+                {String(Number(selected.time.slice(0, 2)) + 1).padStart(
+                  2,
+                  "0",
+                )}
+                :00
+              </strong>
+            </div>
+            <div className="summary-row">
+              <span>Duration</span>
+              <strong>1 hour</strong>
+            </div>
+            <div className="summary-total">
+              <span>Total</span>
+              <strong>{formatCurrency(selectedCourt.price || HOURLY_RATE)}</strong>
+            </div>
+            {confirmError && <ErrorMessage message={confirmError} />}
+            <button
+              className="button full-width"
+              disabled={creating}
+              onClick={handleConfirm}>
+              {creating ? "Confirming..." : "Confirm booking"}{" "}
+              <span aria-hidden="true">-&gt;</span>
+            </button>
+          </div>
+        </Modal>
+      )}
     </main>
   );
 }

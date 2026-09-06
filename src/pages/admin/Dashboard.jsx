@@ -9,8 +9,17 @@ import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { formatCurrency } from "../../utils/currencyUtils";
 
-const today = "2026-09-18";
+import { useAuth } from "../../hooks/useAuth";
+
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+const today = toIsoDate(new Date());
+
 export function Dashboard() {
+  const { user } = useAuth();
+  const firstName = (user?.fullName || "Alex").split(" ")[0];
   const [bookings, setBookings] = useState([]);
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -41,12 +50,28 @@ export function Dashboard() {
     setSelected(next);
   };
   const active = bookings.filter((item) => item.status !== "cancelled");
+  // "Occupied" = a court with a non-cancelled booking today; maintenance
+  // courts are never counted as available.
+  const occupiedIds = new Set(active.map((item) => item.courtId));
+  const availableCount = courts.filter(
+    (court) => !occupiedIds.has(court.id) && court.status !== "maintenance",
+  ).length;
+  const occupiedCount = occupiedIds.size;
+  const todayRevenue = active.reduce((sum, item) => sum + item.amount, 0);
+  const courtBooking = (courtId) => active.find((item) => item.courtId === courtId);
   return (
     <div className="admin-page">
       <div className="admin-page-heading">
         <div>
-          <span className="admin-kicker">SUNDAY, SEPTEMBER 18, 2026</span>
-          <h2>Good morning, Alex.</h2>
+          <span className="admin-kicker">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }).toUpperCase()}
+          </span>
+          <h2>Good morning, {firstName}.</h2>
           <p>Here is what is happening with your courts today.</p>
         </div>
         <span className="live-pill">
@@ -55,12 +80,9 @@ export function Dashboard() {
       </div>
       <div className="admin-stat-grid">
         <StatCard label="Today's bookings" value={bookings.length} />
-        <StatCard
-          label="Today's revenue"
-          value={formatCurrency(active.length * 300)}
-        />
-        <StatCard label="Available courts" value="1" />
-        <StatCard label="Booked courts" value="1" />
+        <StatCard label="Today's revenue" value={formatCurrency(todayRevenue)} />
+        <StatCard label="Available courts" value={availableCount} />
+        <StatCard label="Booked courts" value={occupiedCount} />
       </div>
       <section className="admin-section">
         <div className="admin-section-heading">
@@ -79,11 +101,15 @@ export function Dashboard() {
                 <div>
                   <strong>{court.name}</strong>
                   <CourtStatus
-                    status={court.status}
+                    status={
+                      courtBooking(court.id) ? "occupied" : court.status
+                    }
                     detail={
-                      court.status === "occupied"
-                        ? "6:00 PM - 7:00 PM"
-                        : "Ready for booking"
+                      courtBooking(court.id)
+                        ? `${courtBooking(court.id).time} - ${String(Number(courtBooking(court.id).time.slice(0, 2)) + courtBooking(court.id).duration).padStart(2, "0")}:00`
+                        : court.status === "maintenance"
+                          ? "Under maintenance"
+                          : "Ready for booking"
                     }
                   />
                 </div>
@@ -127,14 +153,22 @@ export function Dashboard() {
           </Link>
         </div>
         <div className="activity-list">
-          <Link to="/admin/customers">
-            <span className="activity-dot green" />
-            New customer registered <small>Maria Santos · 12 min ago</small>
-          </Link>
-          <Link to="/admin/payments">
-            <span className="activity-dot yellow" />
-            Payment received <small>PB-002 · 28 min ago</small>
-          </Link>
+          {bookings.slice(0, 4).map((booking) => (
+            <Link key={booking.id} to="/admin/bookings">
+              <span
+                className={`activity-dot ${booking.status === "cancelled" ? "yellow" : "green"}`}
+              />
+              {booking.status === "cancelled"
+                ? `Booking cancelled · ${booking.customer}`
+                : `New booking ${booking.id} · ${booking.customer}`}
+              <small>
+                {booking.courtName} · {booking.date} {booking.time}
+              </small>
+            </Link>
+          ))}
+          {bookings.length === 0 && (
+            <div className="empty-panel">No bookings yet today.</div>
+          )}
         </div>
       </section>
       {selected && (

@@ -13,14 +13,17 @@ const titles = {
   "/admin/settings": "Settings",
 };
 export function AdminTopbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(null);
-  const logout = () => {
-    localStorage.removeItem("rally-auth-user");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error(err);
+    }
     navigate("/login");
-    window.location.reload();
   };
   return (
     <header className="admin-topbar">
@@ -64,7 +67,7 @@ export function AdminTopbar() {
           <div className="topbar-popover profile-popover">
             <Link to="/admin/settings">Profile</Link>
             <Link to="/admin/settings">Settings</Link>
-            <button onClick={logout}>Logout</button>
+            <button onClick={handleLogout}>Logout</button>
           </div>
         )}
       </div>

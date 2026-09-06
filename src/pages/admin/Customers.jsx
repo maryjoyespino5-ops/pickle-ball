@@ -7,10 +7,19 @@ export function Customers() {
   const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [details, setDetails] = useState(null);
   const navigate = useNavigate();
   useEffect(() => {
     customerService.getCustomers(search).then(setCustomers);
   }, [search]);
+  const openDetails = (customer) => {
+    setSelected(customer);
+    setDetails(null);
+    customerService
+      .getCustomer(customer.id)
+      .then(setDetails)
+      .catch(() => setDetails(null));
+  };
   return (
     <div className="admin-page">
       <div className="admin-page-heading">
@@ -61,7 +70,7 @@ export function Customers() {
                 <td>
                   <button
                     className="row-link"
-                    onClick={() => setSelected(customer)}>
+                    onClick={() => openDetails(customer)}>
                     View
                   </button>
                 </td>
@@ -101,9 +110,46 @@ export function Customers() {
             </div>
             <h4>Recent bookings</h4>
             <div className="customer-booking-actions">
-              <div className="empty-panel">
-                Booking history is ready to connect to Supabase.
-              </div>
+              {!details ? (
+                <div className="empty-panel">Loading booking history...</div>
+              ) : details.bookings.length === 0 ? (
+                <div className="empty-panel">
+                  No bookings yet for this customer.
+                </div>
+              ) : (
+                <div className="table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Booking</th>
+                        <th>Court</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {details.bookings.map((booking) => (
+                        <tr key={booking.id}>
+                          <td>
+                            <strong>{booking.id}</strong>
+                          </td>
+                          <td>{booking.courtName}</td>
+                          <td>
+                            {booking.date} {booking.time}
+                          </td>
+                          <td>{formatCurrency(booking.amount)}</td>
+                          <td>
+                            <span className={`status status-${booking.status}`}>
+                              {booking.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               <button
                 className="button outline"
                 onClick={() =>

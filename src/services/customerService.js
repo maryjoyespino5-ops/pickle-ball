@@ -1,66 +1,119 @@
-const customers = [
-  {
-    id: "cus-1",
-    name: "Juan Dela Cruz",
-    email: "juan@example.com",
-    phone: "+63 917 111 2233",
-    totalBookings: 12,
-    totalSpent: 3600,
-    lastBooking: "2026-09-18",
-    status: "active",
-  },
-  {
-    id: "cus-2",
-    name: "Maria Santos",
-    email: "maria@example.com",
-    phone: "+63 917 222 3344",
-    totalBookings: 8,
-    totalSpent: 2400,
-    lastBooking: "2026-09-18",
-    status: "active",
-  },
-  {
-    id: "cus-3",
-    name: "Carlo Reyes",
-    email: "carlo@example.com",
-    phone: "+63 917 333 4455",
-    totalBookings: 5,
-    totalSpent: 1500,
-    lastBooking: "2026-09-18",
-    status: "active",
-  },
-  {
-    id: "cus-4",
-    name: "Ana Lim",
-    email: "ana@example.com",
-    phone: "+63 917 444 5566",
-    totalBookings: 16,
-    totalSpent: 4800,
-    lastBooking: "2026-09-17",
-    status: "active",
-  },
-  {
-    id: "cus-5",
-    name: "Nico Garcia",
-    email: "nico@example.com",
-    phone: "+63 917 555 6677",
-    totalBookings: 3,
-    totalSpent: 900,
-    lastBooking: "2026-09-16",
-    status: "inactive",
-  },
-];
-export function getCustomers(search = "") {
+﻿import { supabase, isSupabaseConfigured } from "../lib/supabase";
+
+function assertSupabase() {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error(
+      "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.",
+    );
+  }
+}
+
+async function fetchCustomerStats() {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("user_id, booking_date, amount, status, payment_status");
+  if (error) throw error;
+  const stats = {};
+  (data || []).forEach((booking) => {
+    const entry = stats[booking.user_id] || {
+      totalBookings: 0,
+      totalSpent: 0,
+      lastBooking: null,
+    };
+    if (booking.status !== "cancelled") entry.totalBookings += 1;
+    if (booking.payment_status === "paid")
+      entry.totalSpent += Number(booking.amount);
+    if (
+      booking.booking_date &&
+      (!entry.lastBooking || booking.booking_date > entry.lastBooking)
+    )
+      entry.lastBooking = booking.booking_date;
+    stats[booking.user_id] = entry;
+  });
+  return stats;
+}
+
+/* ---------------------------------------------------------------------------
+ * Admin-side: the customers directory. RLS lets admins read every profile;
+ * customers can only ever read their own.
+ * ------------------------------------------------------------------------ */
+
+export async function getCustomers(search = "") {
+  assertSupabase();
+  const [{ data: profiles, error: profilesError }, stats] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, phone, role")
+      .eq("role", "customer")
+      .order("created_at", { ascending: false }),
+    fetchCustomerStats(),
+  ]);
+  if (profilesError) throw profilesError;
+
+  const customers = (profiles || []).map((profile) => ({
+    id: profile.id,
+    name: profile.full_name || profile.email,
+    email: profile.email,
+    phone: profile.phone || "",
+    totalBookings: stats[profile.id]?.totalBookings || 0,
+    totalSpent: stats[profile.id]?.totalSpent || 0,
+    lastBooking: stats[profile.id]?.lastBooking || "—",
+    status: (stats[profile.id]?.totalBookings || 0) > 0 ? "active" : "inactive",
+  }));
+
   const term = search.toLowerCase();
-  return Promise.resolve(
-    customers.filter((customer) =>
-      `${customer.name} ${customer.email} ${customer.phone}`
-        .toLowerCase()
-        .includes(term),
-    ),
+  if (!term) return customers;
+  return customers.filter((customer) =>
+    `${customer.name} ${customer.email} ${customer.phone}`
+      .toLowerCase()
+      .includes(term),
   );
 }
-export function getCustomer(id) {
-  return Promise.resolve(customers.find((customer) => customer.id === id));
+
+export async function getCustomer(id) {
+  assertSupabase();
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, phone")
+    .eq("id", id)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  if (!profile) return null;
+
+  const { data: bookings, error: bookingsError } = await supabase
+    .from("bookings")
+    .select(
+      "booking_number, booking_date, start_time, amount, status, payment_status, courts(name)",
+    )
+    .eq("user_id", id)
+    .order("booking_date", { ascending: false })
+    .limit(5);
+  if (bookingsError) throw bookingsError;
+
+  const active = (bookings || []).filter(
+    (booking) => booking.status !== "cancelled",
+  );
+  return {
+    id: profile.id,
+    name: profile.full_name || profile.email,
+    email: profile.email,
+    phone: profile.phone || "",
+    totalBookings: active.length,
+    totalSpent: (bookings || [])
+      .filter((booking) => booking.payment_status === "paid")
+      .reduce((sum, booking) => sum + Number(booking.amount), 0),
+    lastBooking: (bookings || [])[0]?.booking_date || "—",
+    status: active.length > 0 ? "active" : "inactive",
+    bookings: (bookings || []).map((booking) => ({
+      id: booking.booking_number,
+      courtName: booking.courts?.name || "Court",
+      date: booking.booking_date,
+      time: String(booking.start_time || "").slice(0, 5),
+      amount: Number(booking.amount),
+      status: booking.status,
+      paymentStatus: booking.payment_status,
+    })),
+  };
 }
+
 export const customerService = { getCustomers, getCustomer };

@@ -11,9 +11,11 @@ import { Contact } from "../pages/public/Contact";
 import { Login } from "../pages/auth/Login";
 import { Register } from "../pages/auth/Register";
 import { ForgotPassword } from "../pages/auth/ForgotPassword";
+import { ResetPassword } from "../pages/auth/ResetPassword";
 import { Dashboard } from "../pages/customer/Dashboard";
 import { BookCourt } from "../pages/customer/BookCourt";
 import { MyBookings } from "../pages/customer/MyBookings";
+import { Payments } from "../pages/customer/Payments";
 import { BookingHistory } from "../pages/customer/BookingHistory";
 import { Profile } from "../pages/customer/Profile";
 import { AdminRoute } from "./AdminRoute";
@@ -77,6 +79,7 @@ export function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
       <Route
         element={
@@ -87,6 +90,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/book" element={<BookCourt />} />
         <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/payments" element={<Payments />} />
         <Route path="/history" element={<BookingHistory />} />
         <Route path="/profile" element={<Profile />} />
       </Route>

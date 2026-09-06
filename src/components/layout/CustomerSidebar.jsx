@@ -3,8 +3,12 @@ import { useAuth } from "../../hooks/useAuth";
 export function CustomerSidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error(err);
+    }
     navigate("/login");
   };
   return (
@@ -17,6 +21,7 @@ export function CustomerSidebar() {
         <NavLink to="/book">Book a court</NavLink>
         <NavLink to="/my-bookings">My bookings</NavLink>
         <NavLink to="/history">Booking history</NavLink>
+        <NavLink to="/payments">Payments</NavLink>
         <NavLink to="/profile">Profile</NavLink>
       </nav>
       <button className="sidebar-logout" onClick={handleLogout}>

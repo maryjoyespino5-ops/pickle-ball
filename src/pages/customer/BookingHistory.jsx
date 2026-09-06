@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { BookingTable } from "../../components/dashboard/BookingTable";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { useBookings } from "../../hooks/useBookings";
 export function BookingHistory() {
-  const { bookings, loading } = useBookings();
+  const { bookings, loading, error } = useBookings();
   const [filter, setFilter] = useState("all");
   const history = bookings.filter(
     (booking) =>
@@ -28,7 +29,9 @@ export function BookingHistory() {
           </button>
         ))}
       </div>
-      {loading ? (
+      {error ? (
+        <ErrorMessage message="Unable to load your booking history. Please try again." />
+      ) : loading ? (
         <p className="loading-state">Loading history...</p>
       ) : history.length ? (
         <BookingTable bookings={history} />

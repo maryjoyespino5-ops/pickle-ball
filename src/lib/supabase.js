@@ -1,6 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = url && key ? createClient(url, key) : null;
+export const isSupabaseConfigured = Boolean(url && anonKey);
+
+export const supabase = isSupabaseConfigured
+  ? createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.",
+  );
+}
