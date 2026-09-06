@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { formatCurrency } from "../../utils/currencyUtils";
-import { HOURLY_RATE } from "../../lib/constants";
 export function CourtCard({ court }) {
   return (
     <article className={`court-card ${court.accent}`}>
@@ -20,7 +19,7 @@ export function CourtCard({ court }) {
         </div>
         <div className="court-card-footer">
           <strong>
-            {formatCurrency(court.price || HOURLY_RATE)}
+            {formatCurrency(court.price ?? 300)}
             <small>/ hour</small>
           </strong>
           <Link className="arrow-link" to="/book">

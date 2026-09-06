@@ -5,19 +5,26 @@ import { formatCurrency } from "../../utils/currencyUtils";
 import { todayISO } from "../../utils/dateUtils";
 import { HOURLY_RATE } from "../../lib/constants";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 
 export function Availability() {
   useScrollReveal();
   const [date, setDate] = useState(todayISO);
   const [courts, setCourts] = useState([]);
   const [error, setError] = useState("");
-  useEffect(() => {
+  const load = (target = date) => {
     setError("");
     courtService
-      .getAvailability(date)
+      .getAvailability(target)
       .then(setCourts)
       .catch((err) => setError(err.message));
+  };
+  useEffect(() => {
+    load(date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
+  // Live board: any booking made anywhere updates open slots instantly.
+  useRealtimeBookings(() => load(date), Boolean(date));
   return (
     <main className="page-wrap availability-page">
       <div className="page-intro compact">

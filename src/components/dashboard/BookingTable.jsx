@@ -25,7 +25,7 @@ export function BookingTable({ bookings = [], onCancel }) {
                 {booking.date}
                 <br />
                 <small>
-                              {formatTime12(booking.time)} · {booking.duration} hour
+                  {formatTime12(booking.time)} · {booking.duration} hour
                 </small>
               </td>
               <td>{formatCurrency(booking.amount)}</td>
@@ -39,7 +39,7 @@ export function BookingTable({ bookings = [], onCancel }) {
                 </small>
               </td>
               <td>
-                {booking.status === "upcoming" && (
+                {["upcoming", "confirmed"].includes(booking.status) && (
                   <button
                     className="text-button"
                     onClick={() => onCancel(booking.id)}>

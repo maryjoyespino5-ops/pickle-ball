@@ -44,7 +44,9 @@ export function MyBookings() {
         <p className="loading-state">Loading bookings...</p>
       ) : (
         <BookingTable
-          bookings={bookings.filter((booking) => booking.status === "upcoming")}
+          bookings={bookings.filter((booking) =>
+            ["upcoming", "confirmed"].includes(booking.status),
+          )}
           onCancel={handleCancel}
         />
       )}

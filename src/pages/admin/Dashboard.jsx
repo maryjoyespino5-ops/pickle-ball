@@ -11,6 +11,7 @@ import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12, formatTimeRange12 } from "../../utils/dateUtils";
 
 import { useAuth } from "../../hooks/useAuth";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 
 function toIsoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -26,15 +27,23 @@ export function Dashboard() {
   const [selected, setSelected] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const navigate = useNavigate();
-  useEffect(() => {
-    Promise.all([
-      bookingService.getAllBookings({ date: today }),
-      courtService.getManagedCourts(),
-    ]).then(([nextBookings, nextCourts]) => {
+  const load = async () => {
+    try {
+      const [nextBookings, nextCourts] = await Promise.all([
+        bookingService.getAllBookings({ date: today }),
+        courtService.getManagedCourts(),
+      ]);
       setBookings(nextBookings);
       setCourts(nextCourts);
-    });
+    } catch {
+      // Keep previously loaded data on transient network errors.
+    }
+  };
+  useEffect(() => {
+    load();
   }, []);
+  // Realtime: new customer bookings appear on this dashboard without refresh.
+  useRealtimeBookings(load);
   const update = async (action, booking = selected) => {
     if (!booking) return;
     if (action === "cancelled") {

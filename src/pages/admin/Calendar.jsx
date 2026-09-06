@@ -6,6 +6,7 @@ import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { HOURLY_RATE } from "../../lib/constants";
 import { formatTime12 } from "../../utils/dateUtils";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 export function Calendar() {
   const todayIso = (() => {
     const now = new Date();
@@ -22,16 +23,21 @@ export function Calendar() {
     paymentMethod: "Pay at Court",
   });
   const [bookings, setBookings] = useState([]);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    Promise.all([
+  const [error, setError] = "";
+  const load = async () => {
+    const [nextCourts, nextBookings] = await Promise.all([
       courtService.getAvailability(date),
       bookingService.getAllBookings({ date }),
-    ]).then(([nextCourts, nextBookings]) => {
-      setCourts(nextCourts);
-      setBookings(nextBookings);
-    });
+    ]);
+    setCourts(nextCourts);
+    setBookings(nextBookings);
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
+  // Realtime: a customer booking elsewhere instantly flips this slot to BOOKED.
+  useRealtimeBookings(load, Boolean(date));
   const submit = async (event) => {
     event.preventDefault();
     try {
@@ -45,12 +51,7 @@ export function Calendar() {
       setError(submissionError.message);
       return;
     }
-    const [nextCourts, nextBookings] = await Promise.all([
-      courtService.getAvailability(date),
-      bookingService.getAllBookings({ date }),
-    ]);
-    setCourts(nextCourts);
-    setBookings(nextBookings);
+    await load();
     setSlot(null);
     setForm({
       customer: "",

@@ -138,7 +138,7 @@ export function Bookings() {
           value={filters.status}
           onChange={(event) => setFilter("status", event.target.value)}>
           <option value="all">All statuses</option>
-          <option value="pending">Pending</option>
+          <option value="upcoming">Upcoming</option>
           <option value="confirmed">Confirmed</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>

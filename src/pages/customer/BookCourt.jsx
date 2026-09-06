@@ -10,6 +10,7 @@ import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12, todayISO } from "../../utils/dateUtils";
 import { HOURLY_RATE } from "../../lib/constants";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 
 export function BookCourt() {
   const navigate = useNavigate();
@@ -25,6 +26,21 @@ export function BookCourt() {
     courtService.getAvailability(date).then(setCourts);
     setSelected({});
   }, [date]);
+
+  // Live availability: if another customer books (or an admin reschedules)
+  // while this page is open, the slot grid refreshes from the bookings table.
+  useRealtimeBookings(
+    () => courtService.getAvailability(date).then(setCourts),
+    Boolean(date),
+  );
+
+  // Drop the selection if the chosen slot is no longer available.
+  useEffect(() => {
+    if (!selected.courtId || !selected.time) return;
+    const court = courts.find((item) => item.id === selected.courtId);
+    const slot = court?.slots?.find((item) => item.time === selected.time);
+    if (slot && !slot.available) setSelected({});
+  }, [courts, selected]);
 
   const selectedCourt = courts.find((court) => court.id === selected.courtId);
   const booking =

@@ -25,3 +25,15 @@ alter table public.bookings
       '[)'
     ) with &&
   ) where (status <> 'cancelled');
+
+-- Sync fixes: allow admin walk-in bookings (payments.user_id nullable) and
+-- let admins delete booking/payment rows (cleanup + data management).
+ALTER TABLE public.payments ALTER COLUMN user_id DROP NOT NULL;
+
+CREATE POLICY bookings_admin_delete_all ON public.bookings
+  FOR DELETE TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY payments_admin_delete_all ON public.payments
+  FOR DELETE TO authenticated
+  USING (public.is_admin());

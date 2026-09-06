@@ -1,10 +1,9 @@
 export const BOOKING_STATUSES = {
   UPCOMING: "upcoming",
+  CONFIRMED: "confirmed",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
 };
-export const USER_ROLES = { CUSTOMER: "customer", ADMIN: "admin" };
-export const PAYMENT_STATUSES = { PAID: "paid", PENDING: "pending" };
 export const HOURLY_RATE = 300;
 export const COURT_HOURS = [
   "07:00",
@@ -24,17 +23,3 @@ export const COURT_HOURS = [
   "21:00",
 ];
 
-export const COURTS = [
-  {
-    id: "court-1",
-    name: "Court 1",
-    accent: "sunset",
-    description: "Bright, open-air court with a cushioned surface.",
-  },
-  {
-    id: "court-2",
-    name: "Court 2",
-    accent: "mint",
-    description: "Quiet second court for focused rallies and doubles.",
-  },
-];

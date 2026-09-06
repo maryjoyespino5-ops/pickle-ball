@@ -9,7 +9,7 @@ export function BookingHistory() {
   const [filter, setFilter] = useState("all");
   const history = bookings.filter(
     (booking) =>
-      booking.status !== "upcoming" &&
+      ["completed", "cancelled"].includes(booking.status) &&
       (filter === "all" || booking.status === filter),
   );
   return (
