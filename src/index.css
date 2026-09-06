@@ -8,27 +8,81 @@
 }
 
 /* Customer booking layout */
-.book-page { margin: auto; max-width: 1180px; padding: 58px 35px 80px; }
-.book-layout { align-items: start; display: grid; gap: 28px; grid-template-columns: minmax(0, 1.5fr) minmax(290px, .7fr); }
-.booking-picker { min-width: 0; }
-.booking-courts { display: grid; gap: 15px; margin-top: 24px; }
-.booking-summary { background: var(--panel); box-shadow: var(--shadow); padding: 25px; position: sticky; top: 24px; }
-.summary-heading h2 { font-family: "Space Grotesk"; font-size: 25px; margin: 9px 0 25px; }
-.summary-row, .summary-total { align-items: center; border-top: 1px solid var(--line); display: flex; justify-content: space-between; padding: 15px 0; }
-.summary-row span, .summary-total span { color: var(--muted); font-size: 12px; }
-.summary-row strong { font-size: 12px; }
-.summary-total { margin-top: 8px; }
-.summary-total strong { font-family: "Space Grotesk"; font-size: 24px; }
-.profile-feedback { margin-top: 18px; }
+.book-page {
+  margin: auto;
+  max-width: 1180px;
+  padding: 58px 35px 80px;
+}
+.book-layout {
+  align-items: start;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.7fr);
+}
+.booking-picker {
+  min-width: 0;
+}
+.booking-courts {
+  display: grid;
+  gap: 15px;
+  margin-top: 24px;
+}
+.booking-summary {
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 25px;
+  position: sticky;
+  top: 24px;
+}
+.summary-heading h2 {
+  font-family: "Space Grotesk";
+  font-size: 25px;
+  margin: 9px 0 25px;
+}
+.summary-row,
+.summary-total {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+}
+.summary-row span,
+.summary-total span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.summary-row strong {
+  font-size: 12px;
+}
+.summary-total {
+  margin-top: 8px;
+}
+.summary-total strong {
+  font-family: "Space Grotesk";
+  font-size: 24px;
+}
+.profile-feedback {
+  margin-top: 18px;
+}
 
 @media (max-width: 900px) {
-  .book-layout { grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); }
+  .book-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(250px, 0.8fr);
+  }
 }
 
 @media (max-width: 640px) {
-  .book-page { padding: 35px 20px 55px; }
-  .book-layout { display: block; }
-  .booking-summary { margin-top: 25px; position: static; }
+  .book-page {
+    padding: 35px 20px 55px;
+  }
+  .book-layout {
+    display: block;
+  }
+  .booking-summary {
+    margin-top: 25px;
+    position: static;
+  }
 }
 
 .admin-profile-button {

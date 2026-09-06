@@ -7,8 +7,15 @@ export function Profile() {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [profile, setProfile] = useState({ fullName: user?.fullName || "", email: user?.email || "", phone: user?.phone || "" });
-  const update = (key, value) => { setProfile((current) => ({ ...current, [key]: value })); setSaved(false); };
+  const [profile, setProfile] = useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+  });
+  const update = (key, value) => {
+    setProfile((current) => ({ ...current, [key]: value }));
+    setSaved(false);
+  };
   return (
     <main className="dashboard-page profile-page">
       <div className="dashboard-heading">
@@ -17,7 +24,12 @@ export function Profile() {
           <h1>Profile</h1>
           <p>Keep your contact details up to date.</p>
         </div>
-        <Button variant="outline" onClick={() => { setEditing(!editing); setSaved(!editing); }}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setEditing(!editing);
+            setSaved(!editing);
+          }}>
           {editing ? "Save changes" : "Edit profile"}
         </Button>
       </div>
@@ -26,7 +38,11 @@ export function Profile() {
         <div className="profile-fields">
           <label>
             Full name
-            <input disabled={!editing} value={profile.fullName} onChange={(event) => update("fullName", event.target.value)} />
+            <input
+              disabled={!editing}
+              value={profile.fullName}
+              onChange={(event) => update("fullName", event.target.value)}
+            />
           </label>
           <label>
             Email address
@@ -39,7 +55,11 @@ export function Profile() {
           </label>
           <label>
             Phone number
-            <input disabled={!editing} value={profile.phone} onChange={(event) => update("phone", event.target.value)} />
+            <input
+              disabled={!editing}
+              value={profile.phone}
+              onChange={(event) => update("phone", event.target.value)}
+            />
           </label>
         </div>
       </section>
@@ -49,10 +69,44 @@ export function Profile() {
           <h2>Password</h2>
           <p>Change your password regularly to keep your account secure.</p>
         </div>
-        <button className="button outline" onClick={() => setPasswordOpen(true)}>Change password</button>
+        <button
+          className="button outline"
+          onClick={() => setPasswordOpen(true)}>
+          Change password
+        </button>
       </section>
-      {saved && <div className="success-message profile-feedback">Profile changes saved.</div>}
-      {passwordOpen && <Modal title="Change password" onClose={() => setPasswordOpen(false)}><form className="form-card modal-form" onSubmit={(event) => { event.preventDefault(); setPasswordOpen(false); setSaved(true); }}><label>Current password<input type="password" required /></label><label>New password<input type="password" minLength="8" required /></label><label>Confirm password<input type="password" minLength="8" required /></label><button className="button" type="submit">Update password</button></form></Modal>}
+      {saved && (
+        <div className="success-message profile-feedback">
+          Profile changes saved.
+        </div>
+      )}
+      {passwordOpen && (
+        <Modal title="Change password" onClose={() => setPasswordOpen(false)}>
+          <form
+            className="form-card modal-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setPasswordOpen(false);
+              setSaved(true);
+            }}>
+            <label>
+              Current password
+              <input type="password" required />
+            </label>
+            <label>
+              New password
+              <input type="password" minLength="8" required />
+            </label>
+            <label>
+              Confirm password
+              <input type="password" minLength="8" required />
+            </label>
+            <button className="button" type="submit">
+              Update password
+            </button>
+          </form>
+        </Modal>
+      )}
     </main>
   );
 }
