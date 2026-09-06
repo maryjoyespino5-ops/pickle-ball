@@ -13,9 +13,9 @@
   --coral-deep: #d55c3b;
   --yellow: #f2cb62;
   --mint: #dcebe2;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  --radius-lg: 10px;
+  --radius-md: 8px;
+  --radius-sm: 5px;
   --shadow-sm: 0 2px 8px rgba(15, 51, 44, 0.06);
   --shadow: 0 12px 32px rgba(15, 51, 44, 0.09);
   --shadow-lg: 0 24px 60px rgba(15, 51, 44, 0.14);
@@ -131,6 +131,17 @@ body {
 .home-page > section:nth-child(5) {
   animation-delay: 0.26s;
 }
+@media (max-width: 400px) {
+  .court-card-art {
+    height: 180px;
+  }
+  .court-number {
+    font-size: 46px;
+  }
+  .time-slot {
+    padding: 12px 4px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -149,7 +160,7 @@ body {
   align-items: center;
   background: linear-gradient(135deg, #16453c, #0f332c);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
   display: inline-flex;
   gap: 10px;
@@ -491,7 +502,7 @@ body {
 }
 .court-card-art .court-badge {
   background: rgba(255, 253, 248, 0.94);
-  border-radius: 999px;
+  border-radius: 6px;
   box-shadow: var(--shadow-sm);
   color: var(--ink);
   padding: 8px 14px;
@@ -520,7 +531,7 @@ body {
 }
 .court-card-footer .arrow-link {
   background: var(--ink);
-  border-radius: 999px;
+  border-radius: 6px;
   border-bottom: 0;
   color: #fff;
   font-size: 13px;
@@ -632,7 +643,7 @@ body {
 }
 .customer-sidebar nav a {
   border-left: 2px solid transparent;
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 6px 6px 0;
   color: #abc2b9;
   font-size: 13.5px;
   padding: 13px 14px;
@@ -710,7 +721,7 @@ body {
   font-size: 21px;
 }
 .status {
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 10px;
   padding: 6px 12px;
 }
@@ -744,7 +755,7 @@ body {
 
 /* ---- Buttons -------------------------------------------------------------- */
 .button {
-  border-radius: 999px;
+  border-radius: 6px;
   box-shadow: 0 10px 24px rgba(15, 51, 44, 0.18);
   letter-spacing: 0.01em;
   padding: 15px 28px;
@@ -954,18 +965,57 @@ body {
   .stat-grid {
     grid-template-columns: 1fr;
   }
-  .court-number {
-    font-size: 76px;
+  .court-card-art {
+    height: 210px;
+    padding: 16px 18px;
   }
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+  .court-number {
+    font-size: 58px;
+  }
+  .court-card-content {
+    padding: 20px 20px 22px;
+  }
+  .court-card h3 {
+    font-size: 22px;
+  }
+  .hero-art {
+    min-height: 280px;
+  }
+  .hero {
+    min-height: auto;
+  }
+  .availability-mini {
+    padding: 18px;
+  }
+  .mini-row b {
+    font-size: 10px;
+    padding: 7px 4px;
+  }
+  .form-card,
+  .profile-card {
+    padding: 20px;
+  }
+  .profile-card {
+    flex-direction: column;
+    gap: 22px;
+  }
+  .booking-card {
+    padding: 18px;
+  }
+  .booking-card h3 {
+    font-size: 20px;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .button {
+    padding: 13px 20px;
+    justify-content: center;
   }
   .dashboard-heading h1 {
     font-size: 32px;
     letter-spacing: -1px;
-  }
-  .button {
-    padding: 14px 22px;
   }
 }
 
