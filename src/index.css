@@ -227,6 +227,7 @@ button {
   display: inline-flex;
   height: 34px;
   justify-content: center;
+  object-fit: cover;
   transform: rotate(-12deg);
   width: 34px;
 }
@@ -1682,9 +1683,9 @@ select {
   background: #f3cc63;
   border-radius: 50%;
   display: flex;
-  font-size: 20px;
   height: 39px;
   justify-content: center;
+  object-fit: cover;
   width: 39px;
 }
 .admin-nav-groups {

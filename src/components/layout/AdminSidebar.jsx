@@ -32,7 +32,7 @@ export function AdminSidebar() {
   return (
     <aside className="admin-sidebar">
       <div className="admin-brand">
-        <span className="admin-brand-mark">🏓</span>
+        <img className="admin-brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
         <span>
           Pickleball
           <br />

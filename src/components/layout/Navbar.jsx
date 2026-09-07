@@ -7,7 +7,7 @@ export function Navbar() {
   return (
     <header className="site-header">
       <Link className="brand" to="/">
-        <span className="brand-mark">A</span>
+        <img className="brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
         <span>Alicayard Pickle Ball</span>
       </Link>
       <nav className="public-nav">

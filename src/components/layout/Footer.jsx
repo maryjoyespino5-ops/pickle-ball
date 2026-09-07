@@ -4,7 +4,7 @@ export function Footer() {
     <footer className="site-footer">
       <div>
         <Link className="brand" to="/">
-          <span className="brand-mark">A</span>
+          <img className="brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
           <span>Alicayard Pickle Ball</span>
         </Link>
         <p>Good games start with a good court.</p>
