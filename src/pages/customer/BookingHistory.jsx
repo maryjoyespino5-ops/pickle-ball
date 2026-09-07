@@ -16,7 +16,7 @@ export function BookingHistory() {
     <main className="dashboard-page">
       <div className="dashboard-heading">
         <div>
-          <span className="eyebrow">YOUR RALLY</span>
+          <span className="eyebrow">YOUR PICKLEBALL</span>
           <h1>Booking history</h1>
           <p>A record of the games you have played.</p>
         </div>

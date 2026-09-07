@@ -25,7 +25,7 @@ export function MyBookings() {
     <main className="dashboard-page">
       <div className="dashboard-heading">
         <div>
-          <span className="eyebrow">YOUR RALLY</span>
+          <span className="eyebrow">YOUR PICKLEBALL</span>
           <h1>My bookings</h1>
           <p>Keep track of every hour you have reserved.</p>
         </div>

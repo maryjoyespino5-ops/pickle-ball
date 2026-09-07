@@ -66,10 +66,21 @@ export function Login() {
           </Button>
         </form>
         <p className="auth-switch">
-          New to Rally? <Link to="/register">Create an account</Link>
+          New to Alicayard Pickle Ball? <Link to="/register">Create an account</Link>
         </p>
       </div>
       <div className="auth-art">
+        <video
+          className="auth-art-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="/vid1.mp4" type="video/mp4" />
+        </video>
         <span>
           PLAY
           <br />

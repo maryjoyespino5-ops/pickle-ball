@@ -36,7 +36,7 @@ export function Reports() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "rally-report.csv";
+    link.download = "alicayard-report.csv";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -52,7 +52,7 @@ export function Reports() {
         <div>
           <span className="admin-kicker">THE BIG PICTURE</span>
           <h2>Reports</h2>
-          <p>Simple signals to help you understand the week at Rally.</p>
+          <p>Simple signals to help you understand the week at Alicayard Pickle Ball.</p>
         </div>
         <div className="report-filters">
           <input

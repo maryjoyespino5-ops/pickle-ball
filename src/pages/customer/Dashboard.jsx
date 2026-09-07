@@ -70,7 +70,7 @@ export function Dashboard() {
           )}
         </section>
         <section className="dashboard-note">
-          <span className="eyebrow">YOUR RALLY TIP</span>
+          <span className="eyebrow">YOUR PICKLEBALL TIP</span>
           <h2>
             Bring the energy.
             <br />

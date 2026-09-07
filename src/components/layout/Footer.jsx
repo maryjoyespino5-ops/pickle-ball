@@ -4,8 +4,8 @@ export function Footer() {
     <footer className="site-footer">
       <div>
         <Link className="brand" to="/">
-          <span className="brand-mark">R</span>
-          <span>Rally Court Club</span>
+          <span className="brand-mark">A</span>
+          <span>Alicayard Pickle Ball</span>
         </Link>
         <p>Good games start with a good court.</p>
       </div>
@@ -14,7 +14,7 @@ export function Footer() {
         <Link to="/pricing">Pricing</Link>
         <Link to="/contact">Contact</Link>
       </div>
-      <small>© 2026 Rally Court Club</small>
+      <small>© 2026 Alicayard Pickle Ball</small>
     </footer>
   );
 }

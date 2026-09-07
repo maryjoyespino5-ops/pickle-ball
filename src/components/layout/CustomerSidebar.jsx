@@ -13,7 +13,7 @@ export function CustomerSidebar() {
   };
   return (
     <aside className="customer-sidebar">
-      <div className="sidebar-label">MY RALLY</div>
+      <div className="sidebar-label">MY PICKLEBALL</div>
       <nav>
         <NavLink end to="/dashboard">
           Dashboard

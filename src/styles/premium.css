@@ -46,39 +46,6 @@ body {
     opacity: 1;
   }
 }
-@keyframes ballBounce {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  10% {
-    transform: translate(-46px, -64px) rotate(-160deg);
-  }
-  20% {
-    transform: translate(-92px, 0) rotate(-320deg);
-  }
-  30% {
-    transform: translate(-138px, -48px) rotate(-480deg);
-  }
-  40% {
-    transform: translate(-184px, 0) rotate(-640deg);
-  }
-  50% {
-    transform: translate(-230px, -34px) rotate(-800deg);
-  }
-  60% {
-    transform: translate(-276px, 0) rotate(-960deg);
-  }
-  70% {
-    transform: translate(-322px, -22px) rotate(-1120deg);
-  }
-  80% {
-    transform: translate(-368px, 0) rotate(-1280deg);
-  }
-  90% {
-    transform: translate(-404px, -10px) rotate(-1400deg);
-  }
-}
 @keyframes shimmer {
   from {
     background-position: -400px 0;
@@ -385,39 +352,6 @@ body {
   right: auto;
   top: auto;
 }
-.hero-ball {
-  animation: ballBounce 5.5s var(--ease) infinite;
-  background:
-    radial-gradient(circle at 32% 30%, #f7906e, var(--coral-deep) 70%);
-  border-radius: 50%;
-  box-shadow:
-    inset -4px -6px 10px rgba(120, 30, 10, 0.35),
-    0 10px 22px rgba(15, 51, 44, 0.3);
-  height: 44px;
-  position: absolute;
-  right: 14%;
-  top: 20%;
-  width: 44px;
-}
-.hero-ball::before,
-.hero-ball::after {
-  background: radial-gradient(circle, rgba(255,255,255,0.85) 1.6px, transparent 2.2px);
-  background-size: 11px 11px;
-  border-radius: 50%;
-  content: "";
-  inset: 5px;
-  position: absolute;
-}
-.hero-ball-trail {
-  border-top: 2px dashed rgba(15, 51, 44, 0.28);
-  height: 0;
-  position: absolute;
-  right: calc(14% + 44px);
-  top: calc(20% + 20px);
-
-}
-
-/* ---- Court cards — the main visual focus -------------------------------- */
 .court-grid {
   gap: 32px;
 }
@@ -860,6 +794,31 @@ body {
   overflow: hidden;
   position: relative;
 }
+
+/* Video sits underneath, orange tint stays on top, text stays on top of that */
+.auth-art-video {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  user-select: none;
+  width: 100%;
+  z-index: 0;
+}
+.auth-art::after {
+  background: linear-gradient(160deg, var(--coral), var(--coral-deep));
+  content: "";
+  inset: 0;
+  opacity: 0.45;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+.auth-art > span {
+  position: relative;
+  text-shadow: 0 2px 10px rgba(120, 30, 10, 0.45);
+  z-index: 2;
+}
 .auth-panel .form-card {
   border-radius: var(--radius-lg);
 }
@@ -953,6 +912,122 @@ body {
   border-radius: 6px;
 }
 
+/* ---- Hero image with overlay ------------------------------------------------ */
+.hero-art--showcase {
+  background: transparent;
+  box-shadow: none;
+  min-height:  0;
+  overflow: visible;
+  padding:   0;
+  position: relative;
+}
+.hero-art--showcase::before {
+  display: none;
+}
+
+.hero-showcase {
+  position: relative;
+  width:   100%;
+}
+
+.showcase-frame {
+  aspect-ratio:   4 / 5;
+  background: var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-height:   560px;
+  overflow: hidden;
+  position: relative;
+  width:   100%;
+}
+
+.showcase-img {
+  height:   100%;
+  inset:     0;
+  object-fit: cover;
+  position: absolute;
+  user-select: none;
+  width:     100%;
+}
+
+/* bottom shade for legible overlay text */
+.showcase-shade {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+  inset:     0;
+  pointer-events: none;
+  position: absolute;
+  z-index:    1;
+}
+
+/* overlay copy — bottom-left lockup */
+.showcase-copy {
+  bottom:     24px;
+  color:       #fff;
+  left:        24px;
+  position: absolute;
+  right:       24px;
+  z-index:     2;
+}
+.showcase-eyebrow {
+  align-items: center;
+  display: flex;
+  font-size:    11px;
+  gap:           10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.showcase-eyebrow::before {
+  background: var(--coral);
+  content:       "";
+  height:        2px;
+  width:          26px;
+}
+.showcase-label {
+  display: block;
+  font-size:       clamp(30px, 3.6vw, 48px);
+  font-weight:     800;
+  letter-spacing:    -1.5px;
+  line-height:       1.02;
+  margin-top:        10px;
+  text-transform:     uppercase;
+}
+.showcase-copy p {
+  font-size:        14px;
+  letter-spacing:      0.02em;
+  margin-top:           12px;
+  max-width:            340px;
+  opacity:               0.9;
+}
+
+/* hours badge — top-right */
+.showcase-badge {
+  background:        #0b0b0b;
+  color:       #fff;
+  display: inline-block;
+  padding:            12px 18px;
+  position: absolute;
+  right:               18px;
+  text-align: center;
+  text-transform: uppercase;
+  top:                  18px;
+  z-index:              2;
+}
+.showcase-badge strong {
+  display: block;
+  font-size:            20px;
+  font-weight:           800;
+  letter-spacing:        -0.5px;
+  line-height:          1;
+}
+.showcase-badge {
+  font-size:            10px;
+  letter-spacing:        0.24em;
+}
+
 @media (max-width: 900px) {
   .court-grid {
     grid-template-columns: 1fr;
@@ -980,6 +1055,14 @@ body {
   }
   .hero-art {
     min-height: 280px;
+  }
+  .hero-art--showcase {
+    min-height: 0;
+  }
+  .showcase-frame {
+    aspect-ratio: auto;
+    height: 340px;
+    max-height: none;
   }
   .hero {
     min-height: auto;
@@ -1016,6 +1099,20 @@ body {
   .dashboard-heading h1 {
     font-size: 32px;
     letter-spacing: -1px;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .site-header {
+    gap:  10px;
+  }
+  .site-header .button {
+    font-size:  12px;
+    padding:     9px 12px;
+  }
+  .brand {
+    font-size:  13px;
   }
 }
 

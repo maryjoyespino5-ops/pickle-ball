@@ -1,3 +1,4 @@
+import { HeroShowcase } from "../../components/common/HeroShowcase";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/common/Button";
 import { CourtCard } from "../../components/courts/CourtCard";
@@ -18,7 +19,7 @@ export function Home() {
     <main className="home-page">
       <section className="home-hero">
         <div className="hero-copy">
-          <span className="eyebrow">YOUR NEXT RALLY STARTS HERE</span>
+          <span className="eyebrow">YOUR NEXT GAME STARTS HERE</span>
           <h1>
             Make time
             <br />
@@ -37,18 +38,8 @@ export function Home() {
             </Link>
           </div>
         </div>
-        <div className="hero-art">
-          <div className="court-lines">
-            <span className="net" />
-            <span className="ball">•</span>
-            <span className="hero-ball-trail" aria-hidden="true" />
-            <span className="hero-ball" aria-hidden="true" />
-          </div>
-          <p>
-            OPEN DAILY
-            <br />
-            <strong>07:00 - 22:00</strong>
-          </p>
+        <div className="hero-art hero-art--showcase">
+          <HeroShowcase />
         </div>
       </section>
       <section className="intro-section reveal">
@@ -61,7 +52,7 @@ export function Home() {
           </h2>
         </div>
         <p>
-          Rally Court Club is a simple place for people who love the game. Pick
+          Alicayard Pickle Ball is a simple place for people who love the game. Pick
           a time, bring your crew, and get straight to the fun. No fuss, no
           waiting around.
         </p>

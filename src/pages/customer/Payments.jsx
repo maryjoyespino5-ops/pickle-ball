@@ -28,7 +28,7 @@ export function Payments() {
     <main className="dashboard-page">
       <div className="dashboard-heading">
         <div>
-          <span className="eyebrow">YOUR RALLY</span>
+          <span className="eyebrow">YOUR PICKLEBALL</span>
           <h1>Payments</h1>
           <p>A record of every hour you have paid for.</p>
         </div>

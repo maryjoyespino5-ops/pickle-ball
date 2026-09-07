@@ -47,8 +47,8 @@ function CustomerLayout() {
       <CustomerSidebar />
       <div className="customer-content">
         <div className="mobile-customer-header">
-          <span className="brand-mark">R</span>
-          <span>My Rally</span>
+          <span className="brand-mark">A</span>
+          <span>My Pickleball</span>
         </div>
         <Outlet />
       </div>

@@ -196,10 +196,10 @@ grant execute on function public.get_booked_slots(date) to anon, authenticated;
 -- ---------------------------------------------------------------------------
 create table if not exists public.facility_settings (
   id boolean primary key default true check (id),
-  facility_name text not null default 'Rally Court Club',
+  facility_name text not null default 'Alicayard Pickle Ball',
   address text not null default '18 Palm Avenue, Makati, Metro Manila',
   contact text not null default '+63 917 555 0188',
-  facility_email text not null default 'hello@rallycourt.ph',
+  facility_email text not null default 'hello@alicayardpickleball.ph',
   opening_time time not null default '07:00',
   closing_time time not null default '22:00',
   default_duration integer not null default 1,
@@ -210,7 +210,7 @@ create table if not exists public.facility_settings (
 insert into public.facility_settings
   (facility_name, address, contact, facility_email, opening_time, closing_time, default_duration, max_duration)
 values
-  ('Rally Court Club', '18 Palm Avenue, Makati, Metro Manila', '+63 917 555 0188', 'hello@rallycourt.ph', '07:00', '22:00', 1, 2)
+  ('Alicayard Pickle Ball', '18 Palm Avenue, Makati, Metro Manila', '+63 917 555 0188', 'hello@alicayardpickleball.ph', '07:00', '22:00', 1, 2)
 on conflict (id) do nothing;
 
 alter table public.facility_settings enable row level security;

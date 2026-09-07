@@ -17,7 +17,7 @@ export function Contact() {
       <div className="contact-grid">
         <div className="contact-details">
           <span className="section-index">COME FIND US</span>
-          <strong>Rally Court Club</strong>
+          <strong>Alicayard Pickle Ball</strong>
           <p>
             18 Palm Avenue
             <br />
@@ -25,7 +25,7 @@ export function Contact() {
           </p>
           <span className="section-index">GET IN TOUCH</span>
           <p>
-            hello@rallycourt.ph
+            hello@alicayardpickleball.ph
             <br />
             +63 917 555 0188
           </p>
