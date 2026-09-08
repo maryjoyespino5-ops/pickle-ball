@@ -28,6 +28,11 @@ export function AdminTopbar() {
   return (
     <header className="admin-topbar">
       <div>
+        <img
+          className="admin-topbar-logo"
+          src="/favicon.png"
+          alt="Alicayard Pickle Ball logo"
+        />
         <span className="admin-kicker">ADMIN WORKSPACE</span>
         <h1>{titles[pathname] || "Dashboard"}</h1>
       </div>

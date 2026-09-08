@@ -1176,6 +1176,9 @@ select {
 .mobile-customer-header {
   display: none;
 }
+.sidebar-ico {
+  display: none;
+}
 .dashboard-page {
   margin: auto;
   max-width: 1120px;
@@ -1548,40 +1551,74 @@ select {
   .customer-shell {
     display: block;
   }
+  .customer-content {
+    padding-bottom: 78px;
+  }
   .customer-sidebar {
-    background: var(--ink);
+    bottom: 0;
+    box-shadow: 0 -10px 30px rgba(8, 34, 29, 0.45);
+    display: flex;
+    flex-direction: row;
     height: auto;
-    padding: 15px 20px 10px;
-    position: sticky;
-    top: 0;
+    left: 0;
+    padding: 8px 6px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    position: fixed;
+    right: 0;
+    top: auto;
+    z-index: 60;
   }
   .sidebar-label {
     display: none;
   }
   .customer-sidebar nav {
-    display: grid;
-    gap: 0;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    padding-right: 45px;
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    margin: 0;
+    padding-right: 0;
   }
   .customer-sidebar nav a {
-    border-left: 0;
+    align-items: center;
+    border: 0;
     border-bottom: 2px solid transparent;
-    font-size: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    font-size: 9.5px;
+    gap: 3px;
+    justify-content: center;
     line-height: 1.15;
-    padding: 10px 2px;
+    padding: 6px 2px;
     text-align: center;
   }
   .customer-sidebar nav a.active {
     border-bottom-color: var(--yellow);
   }
+  .sidebar-ico {
+    display: block;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .customer-sidebar nav a[href="/history"] {
+    display: none;
+  }
   .sidebar-logout {
+    align-self: stretch;
+    background: transparent;
     border: 0;
-    font-size: 10px;
-    padding: 8px 0;
-    position: absolute;
-    right: 15px;
-    top: 7px;
+    border-radius: 8px;
+    color: #abc2b9;
+    display: flex;
+    flex-direction: column;
+    font-size: 9.5px;
+    justify-content: center;
+    line-height: 1.15;
+    margin: 0;
+    padding: 6px 2px;
+    text-align: center;
+    width: 60px;
   }
   .mobile-customer-header {
     align-items: center;
@@ -1747,6 +1784,9 @@ select {
 }
 .admin-main {
   min-width: 0;
+}
+.admin-topbar-logo {
+  display: none;
 }
 .admin-topbar {
   align-items: center;
@@ -2549,25 +2589,38 @@ select {
   .admin-shell {
     display: block;
   }
+  .admin-main {
+    padding-bottom: 88px;
+  }
   .admin-sidebar {
+    bottom: 0;
+    box-shadow: 0 -10px 30px rgba(6, 30, 25, 0.45);
     height: auto;
+    left: 0;
     min-height: auto;
-    padding: 12px 15px 0;
-    position: sticky;
-    top: 0;
+    padding: 8px 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    position: fixed;
+    right: 0;
+    top: auto;
+    z-index: 60;
   }
   .admin-brand {
-    padding: 0 7px 12px;
+    display: none;
   }
   .admin-brand-mark {
     height: 31px;
     width: 31px;
   }
   .admin-nav-groups {
-    display: grid;
+    display: flex;
     gap: 2px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding-bottom: 9px;
+    overflow-x: auto;
+    padding-bottom: 0;
+    scrollbar-width: none;
+  }
+  .admin-nav-groups::-webkit-scrollbar {
+    display: none;
   }
   .admin-nav-group {
     display: contents;
@@ -2576,28 +2629,40 @@ select {
     display: none;
   }
   .admin-nav-group a {
+    align-items: center;
+    border: 0;
     border-bottom: 2px solid transparent;
-    border-left: 0;
-    font-size: 10px;
-    gap: 4px;
+    border-radius: 8px;
+    display: flex;
+    flex: 1 0 62px;
+    flex-direction: column;
+    font-size: 9.5px;
+    gap: 3px;
     justify-content: center;
-    padding: 8px 2px;
+    padding: 6px 4px;
     text-align: center;
   }
   .admin-nav-group a.active {
     border-bottom-color: #f3cc63;
   }
   .admin-nav-icon {
-    font-size: 14px;
-    width: 14px;
+    font-size: 15px;
+    width: auto;
   }
   .admin-logout {
-    border-top: 0;
-    font-size: 10px;
-    padding: 0;
-    position: absolute;
-    right: 16px;
-    top: 22px;
+    display: none;
+  }
+  .admin-topbar-logo {
+    border-radius: 8px;
+    display: block;
+    height: 34px;
+    object-fit: cover;
+    width: 34px;
+  }
+  .admin-topbar > div:first-child {
+    align-items: center;
+    display: flex;
+    gap: 10px;
   }
   .admin-topbar {
     min-height: 70px;
