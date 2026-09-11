@@ -495,6 +495,10 @@ body {
   display: flex;
   gap: 20px;
 }
+/* The hamburger toggle only appears on small screens (see the 760px media query). */
+.nav-toggle {
+  display: none;
+}
 .site-header .button {
   padding: 11px 16px;
 }
@@ -1427,12 +1431,52 @@ select {
   }
   .public-nav {
     display: none;
+    /* Keep the expanded panel on its own row below the header actions. */
+    order: 3;
+  }
+  .public-nav.open {
+    background: rgba(246, 245, 239, 0.96);
+    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex: 1 0 100%;
+    flex-direction: column;
+    gap: 2px;
+    margin-left: 0;
+    padding: 6px 0;
+  }
+  .public-nav.open a {
+    display: block;
+    font-size: 14px;
+    padding: 13px 10px;
+  }
+  .public-nav.open a.active {
+    background: #edf1e9;
   }
   .header-actions {
+    gap: 10px;
     margin-left: auto;
+    /* Stay on the first row with the brand; drop the menu panel below. */
+    order: 2;
   }
   .header-login {
-    display: none;
+    font-size: 12px;
+  }
+  .nav-toggle {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    color: var(--ink);
+    display: inline-flex;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .site-header .button {
+    font-size: 12px;
+    padding: 9px 13px;
   }
   .site-footer {
     align-items: flex-start;
@@ -1561,8 +1605,10 @@ select {
     flex-direction: row;
     height: auto;
     left: 0;
-    padding: 8px 6px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 10px;
+    /* iOS home-indicator safe area: Safari supports env(); every other
+       browser keeps the flat 8px padding declared just above. */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     position: fixed;
     right: 0;
     top: auto;
@@ -1571,54 +1617,67 @@ select {
   .sidebar-label {
     display: none;
   }
-  .customer-sidebar nav {
+  .customer-shell .customer-sidebar nav {
     display: flex;
     flex: 1;
-    gap: 2px;
+    gap: 4px;
     margin: 0;
+    overflow-x: auto;
     padding-right: 0;
+    scrollbar-width: none;
   }
-  .customer-sidebar nav a {
-    align-items: center;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    border-radius: 8px;
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    font-size: 9.5px;
-    gap: 3px;
-    justify-content: center;
-    line-height: 1.15;
-    padding: 6px 2px;
-    text-align: center;
-  }
-  .customer-sidebar nav a.active {
-    border-bottom-color: var(--yellow);
-  }
-  .sidebar-ico {
-    display: block;
-    font-size: 16px;
-    line-height: 1;
-  }
-  .customer-sidebar nav a[href="/history"] {
+  .customer-shell .customer-sidebar nav::-webkit-scrollbar {
     display: none;
   }
-  .sidebar-logout {
+  .customer-shell .customer-sidebar nav a {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 12px;
+    color: #abc2b9;
+    display: flex;
+    flex: 1 0 64px;
+    flex-direction: column;
+    font-size: 10px;
+    gap: 4px;
+    justify-content: center;
+    line-height: 1.15;
+    min-height: 52px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .customer-shell .customer-sidebar nav a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+    padding: 8px 6px;
+  }
+  .customer-shell .customer-sidebar nav a.active {
+    background: rgba(243, 204, 99, 0.18);
+    color: #fff;
+  }
+  .customer-shell .sidebar-ico {
+    display: block;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .customer-shell .sidebar-logout {
     align-self: stretch;
     background: transparent;
     border: 0;
-    border-radius: 8px;
+    border-radius: 12px;
     color: #abc2b9;
     display: flex;
+    flex: 1 0 64px;
     flex-direction: column;
-    font-size: 9.5px;
+    font-size: 10px;
+    gap: 4px;
     justify-content: center;
     line-height: 1.15;
     margin: 0;
-    padding: 6px 2px;
+    min-height: 52px;
+    padding: 8px 6px;
     text-align: center;
-    width: 60px;
+    width: auto;
   }
   .mobile-customer-header {
     align-items: center;
@@ -1820,15 +1879,23 @@ select {
   font-size: 22px;
   position: relative;
 }
-.notification-button i {
+.notification-badge {
+  align-items: center;
   background: #e06f50;
-  border: 2px solid white;
+  border: 2px solid #fff;
   border-radius: 50%;
-  height: 7px;
+  color: #fff;
+  display: flex;
+  font-size: 9px;
+  height: 17px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 17px;
+  padding: 0 4px;
   position: absolute;
-  right: 1px;
-  top: 2px;
-  width: 7px;
+  right: -5px;
+  top: -5px;
+  z-index: 1;
 }
 .admin-profile {
   align-items: center;
@@ -2598,8 +2665,10 @@ select {
     height: auto;
     left: 0;
     min-height: auto;
-    padding: 8px 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 10px;
+    /* iOS home-indicator safe area: Safari supports env(); every other
+       browser keeps the flat 8px padding declared just above. */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     position: fixed;
     right: 0;
     top: auto;
@@ -2614,7 +2683,7 @@ select {
   }
   .admin-nav-groups {
     display: flex;
-    gap: 2px;
+    gap: 4px;
     overflow-x: auto;
     padding-bottom: 0;
     scrollbar-width: none;
@@ -2630,27 +2699,53 @@ select {
   }
   .admin-nav-group a {
     align-items: center;
+    background: transparent;
     border: 0;
-    border-bottom: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex;
-    flex: 1 0 62px;
+    flex: 1 0 64px;
     flex-direction: column;
-    font-size: 9.5px;
-    gap: 3px;
+    font-size: 10px;
+    gap: 4px;
     justify-content: center;
-    padding: 6px 4px;
+    min-height: 52px;
+    padding: 8px 6px;
     text-align: center;
   }
+  .admin-nav-group a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+  }
   .admin-nav-group a.active {
-    border-bottom-color: #f3cc63;
+    background: rgba(243, 204, 99, 0.18);
+    color: #fff;
   }
   .admin-nav-icon {
-    font-size: 15px;
+    font-size: 18px;
     width: auto;
   }
   .admin-logout {
-    display: none;
+    align-self: stretch;
+    background: transparent;
+    border: 0;
+    border-radius: 12px;
+    color: #abc2b9;
+    display: flex;
+    flex-direction: column;
+    font-size: 10px;
+    gap: 4px;
+    justify-content: center;
+    margin: 2px 0 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    text-align: center;
+  }
+  .admin-logout:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+  }
+  .admin-logout span {
+    margin: 0;
   }
   .admin-topbar-logo {
     border-radius: 8px;
@@ -2764,5 +2859,185 @@ select {
   .report-filters input {
     flex: 1;
     min-width: 0;
+  }
+}
+
+/* ============================================================================
+ * Responsive improvements
+ *  - customer tables collapse into stacked cards on phones
+ *  - admin tables collapse into stacked cards on phones
+ *  - roomier, touch-friendly calendar grid on phones
+ *  - touch-friendly targets (>= 44px) on small screens
+ *  - very small phones (<= 380px) get tuned headlines / paddings
+ * ========================================================================== */
+
+/* Customer tables (My bookings, Booking history, Payments) become cards.
+   Row labels come from the data-label attribute on each <td>. */
+@media (max-width: 640px) {
+  .table-wrap:has(.booking-table) {
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .booking-table,
+  .booking-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .booking-table {
+    min-width: 0;
+  }
+  .booking-table thead {
+    display: none;
+  }
+  .booking-table tbody tr {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    display: block;
+    margin: 0 0 14px;
+    padding: 14px 16px;
+  }
+  .booking-table tbody td {
+    align-items: center;
+    border: 0;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 7px 2px;
+  }
+  .booking-table tbody td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .booking-table tbody td.table-action-cell::before {
+    display: none;
+  }
+  .booking-table tbody td.table-action-cell button {
+    min-height: 44px;
+    padding: 12px 0 14px;
+    width: 100%;
+  }
+}
+
+/* Admin tables become cards on phones too. */
+@media (max-width: 640px) {
+  .admin-table,
+  .admin-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .admin-table {
+    min-width: 0;
+  }
+  .admin-table thead {
+    display: none;
+  }
+  .admin-table tbody tr {
+    background: #fff;
+    border: 1px solid #e2e9e3;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(25, 60, 52, 0.12);
+    display: block;
+    margin: 0 0 14px;
+    padding: 14px 16px;
+  }
+  .admin-table tbody td {
+    align-items: center;
+    border: 0;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 6px 2px;
+  }
+  .admin-table tbody td::before {
+    color: #80958c;
+    content: attr(data-label);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .admin-table tbody td.table-action-cell::before {
+    display: none;
+  }
+  .admin-table tbody td.table-action-cell {
+    border-top: 1px solid #e2e9e3;
+    display: block;
+    padding: 8px 2px 4px;
+  }
+  .row-actions {
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .row-actions button,
+  .row-link {
+    font-size: 12px;
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+}
+
+/* Roomier, touch-friendly calendar grid on phones. */
+@media (max-width: 640px) {
+  .admin-calendar-grid {
+    grid-template-columns: 52px repeat(2, minmax(140px, 1fr));
+    overflow-x: auto;
+  }
+  .calendar-corner,
+  .calendar-court-head,
+  .calendar-row > strong {
+    padding: 12px 6px;
+  }
+  .calendar-court-head {
+    font-size: 12px;
+  }
+  .calendar-row > .time-slot {
+    min-height: 56px;
+    padding: 16px 5px;
+  }
+}
+
+/* Touch-friendly targets (>= 44px) on small screens. */
+@media (max-width: 760px) {
+  .time-slot {
+    min-height: 48px;
+  }
+  .filter-tabs button {
+    min-height: 44px;
+    padding: 8px 10px 12px;
+  }
+  .topbar-popover a,
+  .topbar-popover button {
+    min-height: 44px;
+    padding: 13px 10px;
+  }
+}
+
+/* Very small phones (<= 380px): keep headlines and padding from wrapping hard. */
+@media (max-width: 380px) {
+  .home-hero h1,
+  .page-intro h1,
+  .auth-panel h1 {
+    font-size: 40px;
+    letter-spacing: -1.6px;
+  }
+  .home-hero .hero-copy {
+    padding: 38px 0 30px;
+  }
+  .page-wrap {
+    padding: 40px 12px 16px;
+  }
+  .book-page {
+    padding: 26px 14px 40px;
+  }
+  .dashboard-page {
+    padding: 26px 14px;
+  }
+  .admin-page {
+    padding: 20px 12px 40px;
   }
 }

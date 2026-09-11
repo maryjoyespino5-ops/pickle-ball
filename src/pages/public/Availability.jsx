@@ -49,9 +49,15 @@ export function Availability() {
         </span>
       </div>
       {error ? (
-        <p className="empty-panel">
+        <div className="empty-panel">
           Availability is temporarily unavailable. Please try again later.
-        </p>
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => load(date)}>
+            Try again
+          </button>
+        </div>
       ) : (
         <div className="availability-board">
           {courts.map((court) => (

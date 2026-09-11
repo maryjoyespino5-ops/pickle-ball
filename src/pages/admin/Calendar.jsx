@@ -1,17 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CalendarView } from "../../components/dashboard/CalendarView";
 import { Modal } from "../../components/common/Modal";
 import { BookingDetails } from "../../components/booking/BookingDetails";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
-import { HOURLY_RATE } from "../../lib/constants";
+import { facilityService } from "../../services/facilityService";
+import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 export function Calendar() {
-  const todayIso = (() => {
+  const [searchParams] = useSearchParams();
+  const requestedCourt = searchParams.get("court") || "";
+  const todayIso = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  })();
+  }, []);
   const [date, setDate] = useState(todayIso);
   const [courts, setCourts] = useState([]);
   const [slot, setSlot] = useState(null);
@@ -23,14 +28,29 @@ export function Calendar() {
     paymentMethod: "Pay at Court",
   });
   const [bookings, setBookings] = useState([]);
-  const [error, setError] = "";
+  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [facility, setFacility] = useState(null);
   const load = async () => {
-    const [nextCourts, nextBookings] = await Promise.all([
-      courtService.getAvailability(date),
-      bookingService.getAllBookings({ date }),
-    ]);
-    setCourts(nextCourts);
-    setBookings(nextBookings);
+    setLoadError("");
+    try {
+      const [nextCourts, nextBookings, nextFacility] = await Promise.all([
+        courtService.getAvailability(date),
+        bookingService.getAllBookings({ date }),
+        facilityService.getPublicInfo().catch(() => null),
+      ]);
+      setCourts(requestedCourt ? nextCourts.filter((court) => court.id === requestedCourt) : nextCourts);
+      setBookings(requestedCourt ? nextBookings.filter((booking) => booking.courtId === requestedCourt) : nextBookings);
+      if (nextFacility) {
+        setFacility(nextFacility);
+        setForm((current) => ({
+          ...current,
+          duration: nextFacility.defaultDuration || current.duration || 1,
+        }));
+      }
+    } catch (loadErr) {
+      setLoadError(loadErr.message || "Could not load the calendar. Try again.");
+    }
   };
   useEffect(() => {
     load();
@@ -38,8 +58,14 @@ export function Calendar() {
   }, [date]);
   // Realtime: a customer booking elsewhere instantly flips this slot to BOOKED.
   useRealtimeBookings(load, Boolean(date));
+  const maxDuration = Number(facility?.maxDuration) || 2;
+  const durationOptions = Array.from(
+    { length: Math.max(1, Math.min(4, maxDuration)) },
+    (_, index) => index + 1,
+  );
   const submit = async (event) => {
     event.preventDefault();
+    setError("");
     try {
       await bookingService.createAdminBooking({
         ...form,
@@ -88,8 +114,17 @@ export function Calendar() {
         </span>
         <span>Click an open slot to create a manual booking</span>
       </div>
+      {loadError && (
+        <div className="admin-load-row">
+          <ErrorMessage message={loadError} />
+          <button className="button outline" type="button" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
       <CalendarView
         courts={courts}
+        facility={facility}
         onSlotClick={(court, time, available) =>
           setSlot({
             court,
@@ -150,8 +185,11 @@ export function Calendar() {
                   onChange={(event) =>
                     setForm({ ...form, duration: Number(event.target.value) })
                   }>
-                  <option value="1">1 hour</option>
-                  <option value="2">2 hours</option>
+                  {durationOptions.map((hours) => (
+                    <option key={hours} value={hours}>
+                      {hours} hour{hours > 1 ? "s" : ""}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label>
@@ -166,10 +204,15 @@ export function Calendar() {
                 </select>
               </label>
               <div className="booking-amount-preview">
-                {form.duration} hour × ₱{HOURLY_RATE} ={" "}
-                <strong>₱{form.duration * HOURLY_RATE}</strong>
+                {form.duration} hour{form.duration > 1 ? "s" : ""} ×{" "}
+                {formatCurrency(slot.court.price || facility?.minPrice || 300)} ={" "}
+                <strong>
+                  {formatCurrency(
+                    form.duration * (slot.court.price || facility?.minPrice || 300),
+                  )}
+                </strong>
               </div>
-              {error && <p className="error-message">{error}</p>}
+              {error && <ErrorMessage message={error} />}
               <button className="button" type="submit">
                 Create booking
               </button>

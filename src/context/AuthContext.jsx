@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { authService } from "../services/authService";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { setRealtimeUser } from "../lib/realtimeBus";
 import { AuthContext } from "./AuthContextValue";
 
 function assertConfigured() {
@@ -69,6 +70,12 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Keep the shared Realtime channel scoped to the signed-in customer (B18):
+  // admins listen to all booking events, customers only their own.
+  useEffect(() => {
+    setRealtimeUser(user);
+  }, [user]);
 
   async function login(credentials) {
     assertConfigured();

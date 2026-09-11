@@ -3,15 +3,27 @@
 -- Seeds the admin-panel account so it can log in at /login and reach /admin.
 --
 --   email:    alicarayad@admin.com
---   password: 123123123
+--   password: EbDzZZGNxm98Jgvd   (bootstrap only — CHANGE AFTER FIRST LOGIN)
+--
+-- !!! SECURITY (S1 / B27) !!!
+--   The bootstrap password is COMMITTED to this repository, so anyone with
+--   repo access knows it. Treat it as an emergency-only fallback:
+--     1) Log in once, then change the password immediately
+--        (Admin Workspace > Settings > Change password).
+--     2) If this migration already ran in a database, the seeded account is
+--        still on the OLD password '123123123' — rotate it there too:
+--          update auth.users
+--             set encrypted_password =
+--               extensions.crypt('paste-new-strong-password',
+--                                extensions.gen_salt('bf'))
+--           where lower(email) = 'alicarayad@admin.com';
+--     3) Never put a real login credential in a committed migration again
+--        (create admins interactively via the Supabase dashboard instead).
 --
 -- Notes:
 --   * The password is bcrypt-hashed with pgcrypto (the same scheme GoTrue /
 --     Supabase Auth uses), so the account works immediately — no email
 --     confirmation needed (email_confirmed_at is set).
---   * The plaintext password lives in this file and is visible to anyone with
---     repo access. It is recommended to change it after the first login
---     (Customer > Profile > password, or a password reset email).
 --   * 0001_profiles.sql auto-creates every new auth user with role 'customer'
 --     and its prevent_role_change trigger blocks role updates, so that trigger
 --     is briefly disabled here while the role is promoted to 'admin'.
@@ -53,7 +65,7 @@ begin
       'authenticated',
       'authenticated',
       admin_email,
-      extensions.crypt('123123123', extensions.gen_salt('bf')),
+      extensions.crypt('EbDzZZGNxm98Jgvd', extensions.gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}',
       '{"full_name":"Alicayard Admin"}',

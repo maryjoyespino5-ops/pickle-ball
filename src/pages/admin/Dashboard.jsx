@@ -17,11 +17,12 @@ function toIsoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-const today = toIsoDate(new Date());
-
 export function Dashboard() {
   const { user } = useAuth();
   const firstName = (user?.fullName || "Alex").split(" ")[0];
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [bookings, setBookings] = useState([]);
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -29,6 +30,7 @@ export function Dashboard() {
   const navigate = useNavigate();
   const load = async () => {
     try {
+      const today = toIsoDate(new Date());
       const [nextBookings, nextCourts] = await Promise.all([
         bookingService.getAllBookings({ date: today }),
         courtService.getManagedCourts(),
@@ -81,7 +83,7 @@ export function Dashboard() {
               day: "numeric",
             }).toUpperCase()}
           </span>
-          <h2>Good morning, {firstName}.</h2>
+          <h2>{greeting}, {firstName}.</h2>
           <p>Here is what is happening with your courts today.</p>
         </div>
         <span className="live-pill">
@@ -149,7 +151,7 @@ export function Dashboard() {
         <AdminBookingTable
           bookings={bookings}
           onView={setSelected}
-          onCancel={(booking) => setSelected(booking)}
+          onCancel={setCancelTarget}
           onConfirm={(booking) => update("confirmed", booking)}
           onComplete={(booking) => update("completed", booking)}
           onReschedule={() => navigate("/admin/bookings")}

@@ -1,25 +1,29 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { Icon } from "../common/Icon";
 
 const groups = [
   {
     label: "BOOKING",
     links: [
-      ["Dashboard", "/admin", "▦"],
-      ["Bookings", "/admin/bookings", "▤"],
-      ["Calendar", "/admin/calendar", "□"],
+      ["Dashboard", "/admin", "dashboard"],
+      ["Bookings", "/admin/bookings", "bookings"],
+      ["Calendar", "/admin/calendar", "calendar"],
     ],
   },
   {
     label: "MANAGEMENT",
     links: [
-      ["Courts", "/admin/courts", "◇"],
-      ["Customers", "/admin/customers", "♙"],
-      ["Payments", "/admin/payments", "₱"],
+      ["Courts", "/admin/courts", "court"],
+      ["Customers", "/admin/customers", "customers"],
+      ["Payments", "/admin/payments", "payments"],
     ],
   },
-  { label: "REPORTING", links: [["Reports", "/admin/reports", "⌁"]] },
-  { label: "SYSTEM", links: [["Settings", "/admin/settings", "⚙"]] },
+  {
+    label: "REPORTING",
+    links: [["Reports", "/admin/reports", "reports"]],
+  },
+  { label: "SYSTEM", links: [["Settings", "/admin/settings", "settings"]] },
 ];
 
 export function AdminSidebar() {
@@ -45,7 +49,9 @@ export function AdminSidebar() {
             <span className="admin-nav-label">{group.label}</span>
             {group.links.map(([label, to, icon]) => (
               <NavLink end={to === "/admin"} key={to} to={to}>
-                <span className="admin-nav-icon">{icon}</span>
+                <span className="admin-nav-icon">
+                  <Icon name={icon} />
+                </span>
                 {label}
               </NavLink>
             ))}
@@ -53,7 +59,10 @@ export function AdminSidebar() {
         ))}
       </div>
       <button className="admin-logout" onClick={handleLogout}>
-        <span>↪</span> Logout
+        <span>
+          <Icon name="logout" size={17} />
+        </span>{" "}
+        Logout
       </button>
     </aside>
   );

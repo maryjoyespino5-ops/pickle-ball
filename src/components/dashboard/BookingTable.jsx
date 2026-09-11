@@ -17,19 +17,19 @@ export function BookingTable({ bookings = [], onCancel }) {
         <tbody>
           {bookings.map((booking) => (
             <tr key={booking.id}>
-              <td>
+              <td data-label="Booking">
                 <strong>{booking.id}</strong>
               </td>
-              <td>{booking.courtName}</td>
-              <td>
+              <td data-label="Court">{booking.courtName}</td>
+              <td data-label="Date & time">
                 {booking.date}
                 <br />
                 <small>
                   {formatTime12(booking.time)} · {booking.duration} hour
                 </small>
               </td>
-              <td>{formatCurrency(booking.amount)}</td>
-              <td>
+              <td data-label="Amount">{formatCurrency(booking.amount)}</td>
+              <td data-label="Status">
                 <span className={`status status-${booking.status}`}>
                   {booking.status}
                 </span>
@@ -38,7 +38,7 @@ export function BookingTable({ bookings = [], onCancel }) {
                   {booking.paymentStatus}
                 </small>
               </td>
-              <td>
+              <td className="table-action-cell">
                 {["upcoming", "confirmed"].includes(booking.status) && (
                   <button
                     className="text-button"

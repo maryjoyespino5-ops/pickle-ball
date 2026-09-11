@@ -107,11 +107,11 @@ export function Profile() {
           <label>
             Email address
             <input
-              disabled={!editing}
+              disabled
               value={profile.email}
-              onChange={(event) => update("email", event.target.value)}
               type="email"
             />
+            <small>Sign-in email — it cannot be changed from here.</small>
           </label>
           <label>
             Phone number

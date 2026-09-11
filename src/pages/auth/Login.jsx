@@ -55,9 +55,6 @@ export function Login() {
           </label>
           {error && <ErrorMessage message={error} />}
           <div className="form-meta">
-            <label className="check-label">
-              <input type="checkbox" /> Remember me
-            </label>
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
           <Button type="submit">

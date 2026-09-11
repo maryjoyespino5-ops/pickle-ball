@@ -56,11 +56,11 @@ export function Payments() {
             <tbody>
               {payments.map((payment) => (
                 <tr key={payment.id}>
-                  <td>
+                  <td data-label="Booking">
                     <strong>{payment.bookingNumber}</strong>
                   </td>
-                  <td>{payment.courtName || "—"}</td>
-                  <td>
+                  <td data-label="Court">{payment.courtName || "—"}</td>
+                  <td data-label="Date & time">
                     {payment.bookingDate || "—"}
                     {payment.startTime && (
                       <>
@@ -69,8 +69,8 @@ export function Payments() {
                       </>
                     )}
                   </td>
-                  <td>{formatCurrency(payment.amount)}</td>
-                  <td>
+                  <td data-label="Amount">{formatCurrency(payment.amount)}</td>
+                  <td data-label="Method">
                     {payment.method}
                     {payment.reference && (
                       <br />
@@ -79,7 +79,7 @@ export function Payments() {
                       <small className="payment-status">{payment.reference}</small>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className={`status status-${payment.status}`}>
                       {payment.status}
                     </span>

@@ -1,4 +1,4 @@
-﻿import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { BOOKING_STATUSES } from "../lib/constants";
 
 function assertSupabase() {
@@ -79,7 +79,7 @@ export async function getBooking(id) {
   return data ? toAppBooking(data) : null;
 }
 
-export async function createBooking({ courtId, date, time }) {
+export async function createBooking({ courtId, date, time, duration = 1 }) {
   assertSupabase();
   const {
     data: { user },
@@ -93,7 +93,7 @@ export async function createBooking({ courtId, date, time }) {
       court_id: courtId,
       booking_date: date,
       start_time: time,
-      duration_hours: 1,
+      duration_hours: Number(duration) || 1,
     })
     .select(bookingSelect)
     .single();
@@ -135,11 +135,17 @@ export async function fetchProfilesMap() {
  * The admin UI refers to courts as "court-1" / "court-2" in filters and
  * reschedule forms; resolve those keys to real court UUIDs from the database.
  */
+/* P4: cache the court name->id map for the app session. */
+let courtMapCache = null;
+
 export async function resolveCourtId(value) {
   if (!value || value === "all") return null;
-  const { data, error } = await supabase.from("courts").select("id, name");
-  if (error) throw error;
-  const courts = data || [];
+  if (!courtMapCache) {
+    const { data, error } = await supabase.from("courts").select("id, name");
+    if (error) throw error;
+    courtMapCache = data || [];
+  }
+  const courts = courtMapCache;
   if (courts.some((court) => court.id === value)) return value;
   const slot = String(value).replace("court-", "");
   const byName = courts.find(
@@ -270,6 +276,7 @@ export async function createAdminBooking({
   email,
   phone,
   duration = 1,
+  paymentMethod = "Pay at Court",
 }) {
   assertSupabase();
   const resolvedCourtId = await resolveCourtId(courtId);
@@ -290,6 +297,18 @@ export async function createAdminBooking({
     .select(adminSelect)
     .single();
   if (error) throw friendlyBookingError(error);
+
+  // B3: persist the payment method the admin chose. The DB default is
+  // "Pay at Court" (set by the payments trigger), so only update on a custom
+  // choice. An admin can always flip it later on the Payments page.
+  if (data?.id && paymentMethod && paymentMethod !== "Pay at Court") {
+    const { error: payError } = await supabase
+      .from("payments")
+      .update({ method: paymentMethod })
+      .eq("booking_id", data.id);
+    if (payError) throw payError;
+  }
+
   const profiles = await fetchProfilesMap();
   return toAdminBooking(data, profiles[data.user_id]);
 }

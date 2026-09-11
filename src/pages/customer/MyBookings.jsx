@@ -5,13 +5,19 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { useBookings } from "../../hooks/useBookings";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
+import { useAutoDismiss } from "../../hooks/useAutoDismiss";
 export function MyBookings() {
   const { bookings, loading, error, cancel } = useBookings();
   useScrollReveal();
   const location = useLocation();
-  const [justBooked] = useState(() => Boolean(location.state?.justBooked));
+  const [justBooked, setJustBooked] = useState(() =>
+    Boolean(location.state?.justBooked),
+  );
   const [notice, setNotice] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  // Success notices auto-dismiss after a few seconds (B30).
+  useAutoDismiss(justBooked, () => setJustBooked(false));
+  useAutoDismiss(notice, () => setNotice(false));
   const handleCancel = async (id) => {
     setCancelError("");
     try {

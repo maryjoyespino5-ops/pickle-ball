@@ -1,18 +1,56 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { reportService } from "../../services/reportService";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { debounce } from "../../utils/debounce";
+
+function isoDateOffset(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+// Quote fields containing commas, quotes, or newlines so CSV exports stay valid.
+function csvField(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+// Single-letter weekday for the trend bar labels ("Monday" -> "M", ...).
+function weekdayLetter(isoDate) {
+  return new Date(`${isoDate}T00:00:00`)
+    .toLocaleDateString("en-US", { weekday: "short" })
+    .slice(0, 1);
+}
+
 export function Reports() {
   const [report, setReport] = useState(null);
   const [filters, setFilters] = useState({
-    from: "2026-09-01",
-    to: "2026-09-18",
+    from: isoDateOffset(30),
+    to: isoDateOffset(0),
     court: "all",
     status: "all",
     paymentStatus: "all",
   });
+  const requestId = useMemo(() => ({ current: 0 }), []);
+  const debouncedFetch = useMemo(
+    () =>
+      debounce((activeFilters) => {
+        const myRequest = (requestId.current += 1);
+        reportService
+          .getReport(activeFilters)
+          .then((next) => {
+            // Ignore stale responses when filters changed mid-flight (B32).
+            if (requestId.current === myRequest) setReport(next);
+          })
+          .catch(() => {});
+      }, 300),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   useEffect(() => {
-    reportService.getReport(filters).then(setReport);
-  }, [filters]);
+    debouncedFetch(filters);
+    return () => debouncedFetch.cancel();
+  }, [filters, debouncedFetch]);
   const updateFilter = (key, value) =>
     setFilters((current) => ({ ...current, [key]: value }));
   const exportReport = () => {
@@ -27,7 +65,9 @@ export function Reports() {
           booking.amount,
           booking.status,
           booking.paymentStatus,
-        ].join(","),
+        ]
+          .map(csvField)
+          .join(","),
       ),
     ];
     const blob = new Blob([rows.join("\n")], {
@@ -157,10 +197,10 @@ export function Reports() {
             </div>
           </div>
           <div className="bar-chart">
-            {report.trend.map((value, index) => (
-              <div className="bar-column" key={index}>
-                <span style={{ height: `${value * 10}%` }} />
-                <small>{["M", "T", "W", "T", "F", "S", "S"][index]}</small>
+            {report.trend.map((item) => (
+              <div className="bar-column" key={item.date}>
+                <span style={{ height: `${item.count * 10}%` }} />
+                <small>{weekdayLetter(item.date)}</small>
               </div>
             ))}
           </div>

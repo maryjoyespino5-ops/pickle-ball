@@ -40,7 +40,10 @@ export async function getReport(filters = {}) {
     const day = new Date(now);
     day.setDate(now.getDate() - offset);
     const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-    trend.push(ranged.filter((booking) => booking.date === key).length);
+    trend.push({
+      date: key,
+      count: ranged.filter((booking) => booking.date === key).length,
+    });
   }
 
   return {

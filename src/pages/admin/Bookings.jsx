@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AdminBookingTable } from "../../components/dashboard/AdminBookingTable";
 import { BookingDetails } from "../../components/booking/BookingDetails";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { bookingService } from "../../services/bookingService";
-import { formatTime12 } from "../../utils/dateUtils";
+import { courtService } from "../../services/courtService";
+import { debounce } from "../../utils/debounce";
+import { formatTime12, todayISO } from "../../utils/dateUtils";
+import { useAutoDismiss } from "../../hooks/useAutoDismiss";
 export function Bookings() {
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
@@ -15,17 +19,50 @@ export function Bookings() {
     paymentStatus: "all",
   });
   const [bookings, setBookings] = useState([]);
+  const [courts, setCourts] = useState([]);
+  const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [reschedule, setReschedule] = useState({
-    date: "2026-09-18",
-    courtId: "court-1",
+    date: todayISO(),
+    courtId: "all",
     time: "17:00",
   });
   const [feedback, setFeedback] = useState("");
+  const [actionError, setActionError] = useState("");
+  useAutoDismiss(feedback, () => setFeedback(""));
+  const requestId = useMemo(() => ({ current: 0 }), []);
+
+  const fetchBookings = async (activeFilters) => {
+    const myRequest = (requestId.current += 1);
+    setLoadError("");
+    try {
+      const rows = await bookingService.getAllBookings(activeFilters);
+      if (requestId.current === myRequest) setBookings(rows);
+    } catch (err) {
+      if (requestId.current === myRequest)
+        setLoadError(err.message || "Could not load bookings. Try again.");
+    }
+  };
+
+  const debouncedFetch = useMemo(
+    () => debounce((activeFilters) => fetchBookings(activeFilters), 300),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   useEffect(() => {
-    bookingService.getAllBookings(filters).then(setBookings);
+    courtService
+      .getManagedCourts()
+      .then(setCourts)
+      .catch(() => setCourts([]));
+  }, []);
+
+  useEffect(() => {
+    debouncedFetch(filters);
+    return () => debouncedFetch.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
   const setFilter = (key, value) =>
     setFilters((current) => ({ ...current, [key]: value }));
@@ -35,15 +72,20 @@ export function Bookings() {
       setCancelTarget(selected);
       return;
     }
-    const next = await bookingService.updateBooking(
-      selected.id,
-      action === "paid" ? { paymentStatus: "paid" } : { status: action },
-    );
-    setBookings((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
-    setSelected(next);
-    setFeedback(`Booking ${next.id} updated.`);
+    setActionError("");
+    try {
+      const next = await bookingService.updateBooking(
+        selected.id,
+        action === "paid" ? { paymentStatus: "paid" } : { status: action },
+      );
+      setBookings((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setSelected(next);
+      setFeedback(`Booking ${next.id} updated.`);
+    } catch (err) {
+      setActionError(err.message || "Could not update this booking.");
+    }
   };
   const beginReschedule = (booking) => {
     setSelected(null);
@@ -77,28 +119,38 @@ export function Bookings() {
         ? beginReschedule(booking)
         : updateSelected(booking, type);
   const updateSelected = async (booking, type) => {
-    const next = await bookingService.updateBooking(booking.id, {
-      status: type,
-    });
-    setBookings((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
-    setFeedback(`Booking ${next.id} marked ${type}.`);
+    setActionError("");
+    try {
+      const next = await bookingService.updateBooking(booking.id, {
+        status: type,
+      });
+      setBookings((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setFeedback(`Booking ${next.id} marked ${type}.`);
+    } catch (err) {
+      setActionError(err.message || "Could not update this booking.");
+    }
   };
   const cancel = async () => {
     if (!cancelTarget) return;
-    const next = await bookingService.updateBooking(cancelTarget.id, {
-      status: "cancelled",
-      paymentStatus:
-        cancelTarget.paymentStatus === "paid"
-          ? "refunded"
-          : cancelTarget.paymentStatus,
-    });
-    setBookings((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
-    setCancelTarget(null);
-    setFeedback(`Booking ${next.id} cancelled.`);
+    setActionError("");
+    try {
+      const next = await bookingService.updateBooking(cancelTarget.id, {
+        status: "cancelled",
+        paymentStatus:
+          cancelTarget.paymentStatus === "paid"
+            ? "refunded"
+            : cancelTarget.paymentStatus,
+      });
+      setBookings((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setCancelTarget(null);
+      setFeedback(`Booking ${next.id} cancelled.`);
+    } catch (err) {
+      setActionError(err.message || "Could not cancel this booking.");
+    }
   };
   return (
     <div className="admin-page">
@@ -208,7 +260,7 @@ export function Bookings() {
               Date
               <input
                 type="date"
-                min="2026-09-18"
+                min={todayISO()}
                 value={reschedule.date}
                 onChange={(event) =>
                   setReschedule({ ...reschedule, date: event.target.value })
@@ -222,8 +274,11 @@ export function Bookings() {
                 onChange={(event) =>
                   setReschedule({ ...reschedule, courtId: event.target.value })
                 }>
-                <option value="court-1">Court 1</option>
-                <option value="court-2">Court 2</option>
+                {courts.map((court) => (
+                  <option key={court.id} value={court.id}>
+                    {court.name}
+                  </option>
+                ))}
               </select>
             </label>
             <label>

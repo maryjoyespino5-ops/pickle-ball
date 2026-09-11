@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { COURT_HOURS } from "../lib/constants";
+import { facilityService, buildCourtHours } from "./facilityService";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
@@ -55,6 +56,10 @@ export async function getAvailability(date) {
   );
   if (bookingsError) throw bookingsError;
 
+  // Build the hour slots from the facility's configured opening/closing.
+  const settings = await facilityService.getPublicInfo().catch(() => null);
+  const hours = buildCourtHours(settings);
+
   const busy = new Set(
     (bookedSlots || []).map(
       (item) => `${item.court_id}:${formatTime(item.start_time)}`,
@@ -63,7 +68,7 @@ export async function getAvailability(date) {
 
   return (courtRows || []).map((court) => ({
     ...toAppCourt(court),
-    slots: COURT_HOURS.map((time) => ({
+    slots: hours.map((time) => ({
       time,
       available: !busy.has(`${court.id}:${time}`),
     })),

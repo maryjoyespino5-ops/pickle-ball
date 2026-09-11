@@ -1,18 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal } from "../../components/common/Modal";
 import { customerService } from "../../services/customerService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
+import { debounce } from "../../utils/debounce";
 export function Customers() {
   const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState([]);
   const [selected, setSelected] = useState(null);
   const [details, setDetails] = useState(null);
   const navigate = useNavigate();
+  const requestId = useMemo(() => ({ current: 0 }), []);
+  const debouncedFetch = useMemo(
+    () =>
+      debounce((activeSearch) => {
+        const myRequest = (requestId.current += 1);
+        customerService
+          .getCustomers(activeSearch)
+          .then((rows) => {
+            // Ignore stale responses when the search changed mid-flight (B32).
+            if (requestId.current === myRequest) setCustomers(rows);
+          })
+          .catch(() => {});
+      }, 300),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   useEffect(() => {
-    customerService.getCustomers(search).then(setCustomers);
-  }, [search]);
+    debouncedFetch(search);
+    return () => debouncedFetch.cancel();
+  }, [search, debouncedFetch]);
   const openDetails = (customer) => {
     setSelected(customer);
     setDetails(null);
@@ -55,20 +73,20 @@ export function Customers() {
           <tbody>
             {customers.map((customer) => (
               <tr key={customer.id}>
-                <td>
+                <td data-label="Customer">
                   <strong>{customer.name}</strong>
                 </td>
-                <td>{customer.email}</td>
-                <td>{customer.phone}</td>
-                <td>{customer.totalBookings}</td>
-                <td>{formatCurrency(customer.totalSpent)}</td>
-                <td>{customer.lastBooking}</td>
-                <td>
+                <td data-label="Email">{customer.email}</td>
+                <td data-label="Phone">{customer.phone}</td>
+                <td data-label="Total bookings">{customer.totalBookings}</td>
+                <td data-label="Total spent">{formatCurrency(customer.totalSpent)}</td>
+                <td data-label="Last booking">{customer.lastBooking}</td>
+                <td data-label="Status">
                   <span className={`status status-${customer.status}`}>
                     {customer.status}
                   </span>
                 </td>
-                <td>
+                <td className="table-action-cell">
                   <button
                     className="row-link"
                     onClick={() => openDetails(customer)}>
@@ -132,15 +150,15 @@ export function Customers() {
                     <tbody>
                       {details.bookings.map((booking) => (
                         <tr key={booking.id}>
-                          <td>
+                          <td data-label="Booking">
                             <strong>{booking.id}</strong>
                           </td>
-                          <td>{booking.courtName}</td>
-                          <td>
+                          <td data-label="Court">{booking.courtName}</td>
+                          <td data-label="Date">
                             {booking.date} {formatTime12(booking.time)}
                           </td>
-                          <td>{formatCurrency(booking.amount)}</td>
-                          <td>
+                          <td data-label="Amount">{formatCurrency(booking.amount)}</td>
+                          <td data-label="Status">
                             <span className={`status status-${booking.status}`}>
                               {booking.status}
                             </span>

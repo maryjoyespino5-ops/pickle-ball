@@ -6,9 +6,9 @@ import { Modal } from "../../components/common/Modal";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { courtService } from "../../services/courtService";
 import { bookingService } from "../../services/bookingService";
+import { facilityService } from "../../services/facilityService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12, todayISO } from "../../utils/dateUtils";
-import { HOURLY_RATE } from "../../lib/constants";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 
@@ -18,21 +18,43 @@ export function BookCourt() {
   const [date, setDate] = useState(todayISO);
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState({});
+  const [duration, setDuration] = useState(1);
+  const [maxDuration, setMaxDuration] = useState(2);
   const [confirming, setConfirming] = useState(false);
   const [creating, setCreating] = useState(false);
   const [confirmError, setConfirmError] = useState("");
+  const [loadError, setLoadError] = useState("");
+
+  const load = async (targetDate) => {
+    setLoadError("");
+    try {
+      const [nextCourts, facility] = await Promise.all([
+        courtService.getAvailability(targetDate),
+        facilityService.getPublicInfo().catch(() => null),
+      ]);
+      setCourts(nextCourts);
+      if (facility) {
+        setMaxDuration(Number(facility.maxDuration) || 2);
+        setDuration((current) => {
+          const fallback = Number(facility.defaultDuration) || 1;
+          return current && current <= (Number(facility.maxDuration) || 2)
+            ? current
+            : fallback;
+        });
+      }
+    } catch (err) {
+      setLoadError(err.message || "Could not load availability. Try again.");
+    }
+  };
 
   useEffect(() => {
-    courtService.getAvailability(date).then(setCourts);
+    load(date);
     setSelected({});
   }, [date]);
 
   // Live availability: if another customer books (or an admin reschedules)
   // while this page is open, the slot grid refreshes from the bookings table.
-  useRealtimeBookings(
-    () => courtService.getAvailability(date).then(setCourts),
-    Boolean(date),
-  );
+  useRealtimeBookings(() => load(date), Boolean(date));
 
   // Drop the selection if the chosen slot is no longer available.
   useEffect(() => {
@@ -43,6 +65,11 @@ export function BookCourt() {
   }, [courts, selected]);
 
   const selectedCourt = courts.find((court) => court.id === selected.courtId);
+  const durationOptions = Array.from(
+    { length: Math.max(1, Math.min(4, maxDuration)) },
+    (_, index) => index + 1,
+  );
+  const hourlyRate = selectedCourt?.price || 300;
   const booking =
     selectedCourt && selected.time
       ? {
@@ -50,9 +77,10 @@ export function BookCourt() {
           courtName: selectedCourt.name,
           date,
           time: selected.time,
-          amount: selectedCourt.price || HOURLY_RATE,
+          duration,
+          amount: hourlyRate * duration,
         }
-      : { date };
+      : { date, duration };
 
   const handleConfirm = async () => {
     if (!selectedCourt || !selected.time) return;
@@ -63,6 +91,7 @@ export function BookCourt() {
         courtId: selectedCourt.id,
         date,
         time: selected.time,
+        duration,
       });
       navigate("/my-bookings", { state: { justBooked: true } });
     } catch (err) {
@@ -83,6 +112,17 @@ export function BookCourt() {
           the game.
         </p>
       </div>
+      {loadError && (
+        <div className="admin-load-row">
+          <ErrorMessage message={loadError} />
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => load(date)}>
+            Try again
+          </button>
+        </div>
+      )}
       <div className="book-layout">
         <section className="booking-picker">
           <label className="date-field">
@@ -93,6 +133,19 @@ export function BookCourt() {
               value={date}
               onChange={(event) => setDate(event.target.value)}
             />
+          </label>
+          <label className="duration-field">
+            Duration
+            <select
+              value={duration}
+              onChange={(event) => setDuration(Number(event.target.value))}>
+              {durationOptions.map((hours) => (
+                <option key={hours} value={hours}>
+                  {hours} hour{hours > 1 ? "s" : ""} ·{" "}
+                  {formatCurrency(hourlyRate * hours)}
+                </option>
+              ))}
+            </select>
           </label>
           <div className="booking-courts">
             {courts.map((court) => (
@@ -151,15 +204,17 @@ export function BookCourt() {
             </div>
             <div className="summary-row">
               <span>Time</span>
-              <strong>{formatTimeRange12(selected.time)}</strong>
+              <strong>{formatTimeRange12(selected.time, duration)}</strong>
             </div>
             <div className="summary-row">
               <span>Duration</span>
-              <strong>1 hour</strong>
+              <strong>
+                {duration} hour{duration > 1 ? "s" : ""}
+              </strong>
             </div>
             <div className="summary-total">
               <span>Total</span>
-              <strong>{formatCurrency(selectedCourt.price || HOURLY_RATE)}</strong>
+              <strong>{formatCurrency(hourlyRate * duration)}</strong>
             </div>
             {confirmError && <ErrorMessage message={confirmError} />}
             <button

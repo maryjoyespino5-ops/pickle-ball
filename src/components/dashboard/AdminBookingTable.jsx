@@ -27,31 +27,31 @@ export function AdminBookingTable({
         <tbody>
           {bookings.map((booking) => (
             <tr key={booking.id}>
-              <td>
+              <td data-label="Booking ID">
                 <strong>{booking.id}</strong>
               </td>
-              <td>
+              <td data-label="Customer">
                 {booking.customer}
                 <small>{booking.email}</small>
               </td>
-              <td>{booking.courtName}</td>
-              <td>
+              <td data-label="Court">{booking.courtName}</td>
+              <td data-label="Date / time">
                 {booking.date}
                 <small>{formatTime12(booking.time)}</small>
               </td>
-              <td>{booking.duration} hr</td>
-              <td>{formatCurrency(booking.amount)}</td>
-              <td>
+              <td data-label="Duration">{booking.duration} hr</td>
+              <td data-label="Amount">{formatCurrency(booking.amount)}</td>
+              <td data-label="Status">
                 <span className={`status status-${booking.status}`}>
                   {booking.status}
                 </span>
               </td>
-              <td>
+              <td data-label="Payment">
                 <span className={`status status-${booking.paymentStatus}`}>
                   {booking.paymentStatus}
                 </span>
               </td>
-              <td>
+              <td className="table-action-cell">
                 <div className="row-actions">
                   <button onClick={() => onView(booking)}>View</button>
                   {booking.status === "pending" && (

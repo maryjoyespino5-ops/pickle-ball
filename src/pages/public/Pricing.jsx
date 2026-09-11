@@ -1,8 +1,28 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/common/Button";
-import { HOURLY_RATE } from "../../lib/constants";
+import { facilityService } from "../../services/facilityService";
 import { formatCurrency } from "../../utils/currencyUtils";
+
 export function Pricing() {
+  const [rate, setRate] = useState(300);
+  const [hours, setHours] = useState({ opening: "07:00", closing: "22:00" });
+
+  useEffect(() => {
+    let mounted = true;
+    facilityService
+      .getPublicInfo()
+      .then((info) => {
+        if (!mounted || !info) return;
+        if (info.minPrice) setRate(info.minPrice);
+        if (info.opening && info.closing)
+          setHours({ opening: info.opening, closing: info.closing });
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
   return (
     <main className="page-wrap pricing-page">
       <div className="page-intro compact">
@@ -21,14 +41,16 @@ export function Pricing() {
         <div>
           <span className="eyebrow">COURT TIME</span>
           <h2>
-            {formatCurrency(HOURLY_RATE)}
+            {formatCurrency(rate)}
             <small>/ hour</small>
           </h2>
           <p>Per pickleball court, for up to 4 players.</p>
         </div>
         <ul>
           <li>Professional court surface</li>
-          <li>Open daily, 07:00 - 22:00</li>
+          <li>
+            Open daily, {hours.opening} - {hours.closing}
+          </li>
           <li>Instant booking confirmation</li>
         </ul>
         <Button to="/book">

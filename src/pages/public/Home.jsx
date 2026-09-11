@@ -1,20 +1,56 @@
 import { HeroShowcase } from "../../components/common/HeroShowcase";
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { Button } from "../../components/common/Button";
 import { CourtCard } from "../../components/courts/CourtCard";
+import { courtService } from "../../services/courtService";
+import { facilityService } from "../../services/facilityService";
 import { useCourts } from "../../hooks/useCourts";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
-import { HOURLY_RATE } from "../../lib/constants";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
+import { useEffect, useState } from "react";
+import { todayISO } from "../../utils/dateUtils";
 import { formatCurrency } from "../../utils/currencyUtils";
 
 export function Home() {
   const { courts, loading } = useCourts();
+  const [availability, setAvailability] = useState([]);
+  const [facility, setFacility] = useState(null);
   useScrollReveal();
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
+
+  // B6: the "LIVE AVAILABILITY" panel reads today's real slots (no more
+  // hardcoded demo values) and refreshes whenever a booking changes.
+  const load = () => {
+    courtService
+      .getAvailability(todayISO())
+      .then((rows) => setAvailability(rows))
+      .catch(() => setAvailability([]));
+    facilityService
+      .getPublicInfo()
+      .then((info) => setFacility(info))
+      .catch(() => setFacility(null));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  useRealtimeBookings(load, true);
+
+  const preview = useMemo(
+    () =>
+      availability.slice(0, 2).map((court) => ({
+        name: court.name,
+        slots: (court.slots || [])
+          .filter((slot) => slot.available)
+          .slice(0, 4),
+      })),
+    [availability],
+  );
+  const heroRate = facility?.minPrice || courts[0]?.price || 300;
   return (
     <main className="home-page">
       <section className="home-hero">
@@ -101,22 +137,24 @@ export function Home() {
             <strong>Today</strong>
             <span>{today}</span>
           </div>
-          <div className="mini-row">
-            <span>Court 1</span>
-            <b>08:00</b>
-            <b className="booked">14:00</b>
-            <b>16:00</b>
-            <b>19:00</b>
-          </div>
-          <div className="mini-row">
-            <span>Court 2</span>
-            <b>08:00</b>
-            <b>10:00</b>
-            <b className="booked">16:00</b>
-            <b>20:00</b>
-          </div>
+          {preview.length === 0 ? (
+            <div className="mini-row">
+              <span>Loading live slots…</span>
+            </div>
+          ) : (
+            preview.map((court) => (
+              <div className="mini-row" key={court.name}>
+                <span>{court.name}</span>
+                {court.slots.length === 0 ? (
+                  <b className="booked">Full</b>
+                ) : (
+                  court.slots.map((slot) => <b key={slot.time}>{slot.time}</b>)
+                )}
+              </div>
+            ))
+          )}
           <small>
-            <i className="dot open" /> Open <i className="dot taken" /> Booked
+            <i className="dot open" /> Open slots today <i className="dot taken" /> Full
           </small>
         </div>
       </section>
@@ -129,7 +167,7 @@ export function Home() {
         </h2>
         <p>Every court, every day, same simple rate.</p>
         <strong>
-          {formatCurrency(HOURLY_RATE)} <small>/ hour</small>
+          {formatCurrency(heroRate)} <small>/ hour</small>
         </strong>
         <Link className="text-link" to="/pricing">
           See pricing details

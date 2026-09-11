@@ -1,4 +1,4 @@
-﻿import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {

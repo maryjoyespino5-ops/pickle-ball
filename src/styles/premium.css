@@ -1124,9 +1124,20 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  .reveal {
+  .reveal,
+  .time-slot,
+  .stat-card,
+  .booking-card,
+  .court-card,
+  .managed-court-card,
+  .button,
+  .status,
+  .bar-column span,
+  .performance-row i {
     opacity: 1;
     transform: none;
+    box-shadow: none;
   }
 }

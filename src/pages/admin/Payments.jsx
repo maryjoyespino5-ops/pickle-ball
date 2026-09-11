@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal } from "../../components/common/Modal";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
@@ -12,14 +13,25 @@ export function Payments() {
     date: "",
   });
   const [refundTarget, setRefundTarget] = useState(null);
+  const [actionError, setActionError] = useState("");
   useEffect(() => {
-    paymentService.getPayments().then(setPayments);
+    paymentService
+      .getPayments()
+      .then(setPayments)
+      .catch((err) =>
+        setActionError(err.message || "Could not load payments."),
+      );
   }, []);
   const markPaid = async (id) => {
-    const next = await paymentService.updatePayment(id, "paid");
-    setPayments((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
+    setActionError("");
+    try {
+      const next = await paymentService.updatePayment(id, "paid");
+      setPayments((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+    } catch (err) {
+      setActionError(err.message || "Could not mark this payment as paid.");
+    }
   };
   const visible = payments.filter((payment) => {
     const matchesSearch = `${payment.id} ${payment.customer}`
@@ -32,14 +44,19 @@ export function Payments() {
     );
   });
   const refund = async () => {
-    const next = await paymentService.updatePayment(
-      refundTarget.id,
-      "refunded",
-    );
-    setPayments((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
-    setRefundTarget(null);
+    setActionError("");
+    try {
+      const next = await paymentService.updatePayment(
+        refundTarget.id,
+        "refunded",
+      );
+      setPayments((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setRefundTarget(null);
+    } catch (err) {
+      setActionError(err.message || "Could not refund this payment.");
+    }
   };
   return (
     <div className="admin-page">
@@ -77,6 +94,7 @@ export function Payments() {
           <option value="refunded">Refunded</option>
         </select>
       </div>
+      {actionError && <ErrorMessage message={actionError} />}
       <div className="table-wrap">
         <table className="admin-table">
           <thead>
@@ -94,20 +112,21 @@ export function Payments() {
           <tbody>
             {visible.map((payment) => (
               <tr key={payment.id}>
-                <td>
+                <td data-label="Booking ID">
                   <strong>{payment.id}</strong>
                 </td>
-                <td>{payment.customer}</td>
-                <td>{payment.courtName}</td>
-                <td>{payment.date}</td>
-                <td>{formatCurrency(payment.amount)}</td>
-                <td>{payment.paymentMethod}</td>
-                <td>
+                <td data-label="Customer">{payment.customer}</td>
+                <td data-label="Court">{payment.courtName}</td>
+                <td data-label="Date">{payment.date}</td>
+                <td data-label="Amount">{formatCurrency(payment.amount)}</td>
+                <td data-label="Payment method">{payment.paymentMethod}</td>
+                <td data-label="Payment status">
                   <span className={`status status-${payment.paymentStatus}`}>
                     {payment.paymentStatus}
                   </span>
                 </td>
-                <td>
+                <td className="table-action-cell">
+                  <div className="row-actions">
                   <button
                     className="row-link"
                     onClick={() => setSelected(payment)}>
@@ -127,6 +146,7 @@ export function Payments() {
                       Refund
                     </button>
                   )}
+                  </div>
                 </td>
               </tr>
             ))}

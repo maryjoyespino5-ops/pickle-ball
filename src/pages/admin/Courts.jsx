@@ -24,7 +24,7 @@ export function Courts() {
           <h2>Courts</h2>
           <p>Keep your two courts available, accurate, and ready for play.</p>
         </div>
-        <span className="result-count">2 courts total</span>
+        <span className="result-count">{courts.length} courts total</span>
       </div>
       <div className="admin-court-grid">
         {courts.map((court) => (
