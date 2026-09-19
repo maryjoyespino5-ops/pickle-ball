@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { todayISO } from "../utils/dateUtils";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
@@ -7,15 +8,6 @@ function assertSupabase() {
     );
   }
 }
-
-/** The facility operates in Manila time — the public RPC uses it too. */
-const FACILITY_TZ = "Asia/Manila";
-
-/** Today's date (YYYY-MM-DD) in facility time, independent of the browser tz. */
-export function facilityTodayISO() {
-  return new Date().toLocaleDateString("en-CA", { timeZone: FACILITY_TZ });
-}
-
 
 /** Paddle QR tokens follow the /paddle/:token route, e.g. paddle-001. */
 export function qrTokenFor(paddleNumber) {
@@ -130,10 +122,11 @@ export async function getPaddles() {
       .select(
         "booking_number, user_id, paddle_id, court_id, booking_date, start_time, duration_hours, status, customer_name, courts(name)",
       )
-      // From facility-today onward (not strictly today): a paddle linked to a
-      // future booking must show Reserved, and a booking from any date that is
-      // currently inside its rental window must show In Use.
-      .gte("booking_date", facilityTodayISO())
+      // From today onward so future bookings show Reserved and in-window
+      // bookings show In Use. Uses the app's browser-local "today" (the same
+      // convention bookings are created with) — NOT Manila time, which
+      // filtered out legitimately linked bookings for off-Manila viewers.
+      .gte("booking_date", todayISO())
       .in("status", ["upcoming", "confirmed"])
       .order("booking_date")
       .order("start_time"),
@@ -143,8 +136,10 @@ export async function getPaddles() {
   if (bookingResult.error) throw bookingResult.error;
   if (profileResult.error) throw profileResult.error;
 
-  // Group linked bookings per paddle, then apply the same pick rule as the
-  // public RPC (active rental first, else the soonest upcoming one).
+  // Group linked bookings per paddle. Pick the one that drives status
+  // (active rental first, else the soonest upcoming). If a paddle only has a
+  // finished rental, keep the most recent one so the admin row still shows
+  // the linked booking instead of an empty "—" (status stays "Available").
   const byPaddle = {};
   (bookingResult.data || []).forEach((b) => {
     if (!b.paddle_id) return;
@@ -156,6 +151,17 @@ export async function getPaddles() {
     const picked = pickBooking(rows, Date.now());
     if (picked) bookingMap[paddleId] = picked;
   });
+  if (Object.keys(byPaddle).length) {
+    const nowMsValue = Date.now();
+    Object.entries(byPaddle).forEach(([paddleId, rows]) => {
+      if (bookingMap[paddleId]) return;
+      const finished = rows
+        .map((row) => ({ row, window: windowFor(row) }))
+        .filter((entry) => entry.window && nowMsValue >= entry.window.endMs)
+        .sort((a, b) => b.window.endMs - a.window.endMs);
+      if (finished[0]) bookingMap[paddleId] = finished[0].row;
+    });
+  }
   const profileMap = Object.fromEntries(
     (profileResult.data || []).map((p) => [p.id, p]),
   );
