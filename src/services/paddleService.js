@@ -15,6 +15,19 @@ export function qrTokenFor(paddleNumber) {
 }
 
 /**
+ * Build the public scan URL a QR sticker encodes. Prefers VITE_SITE_URL when
+ * set, so printed QRs always point at the deployed site even if they are
+ * generated while testing on localhost. Falls back to the current origin.
+ */
+export function paddleUrl(qrToken) {
+  const configured = String(import.meta.env.VITE_SITE_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
+  const base = configured || window.location.origin;
+  return `${base}/paddle/${qrToken}`;
+}
+
+/**
  * Derive the current paddle state from its linked booking (if any), using the
  * EXISTING booking fields (booking_date + start_time + duration_hours) exactly
  * like the public get_paddle_status RPC does, but on the client for the admin
@@ -209,4 +222,5 @@ export const paddleService = {
   setPaddleActive,
   getPublicPaddleStatus,
   qrTokenFor,
+  paddleUrl,
 };

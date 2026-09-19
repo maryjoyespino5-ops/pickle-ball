@@ -1,0 +1,4 @@
+# Netlify / general static hosting — SPA fallback so deep links like
+# /paddle/paddle-001 (QR scans) and /reset-password work in production.
+# Existing files (assets, favicon) are still served normally first.
+/*    /index.html   200

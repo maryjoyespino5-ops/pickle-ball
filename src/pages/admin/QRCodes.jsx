@@ -340,7 +340,7 @@ return (
                     <td data-label="QR code">
                       <div className="qr-preview-cell">
                         <QrCode
-                          value={`${window.location.origin}/paddle/${paddle.qrToken}`}
+                          value={paddleService.paddleUrl(paddle.qrToken)}
                           size={96}
                           className="qr-preview"
                           canvasStore={canvasMap}
@@ -546,7 +546,7 @@ return (
             {printTargets.map((paddle) => (
               <QrCode
                 key={paddle.id}
-                value={`${window.location.origin}/paddle/${paddle.qrToken}`}
+                value={paddleService.paddleUrl(paddle.qrToken)}
                 size={120}
                 className="qr-preview"
               />
@@ -567,7 +567,7 @@ return (
               {paddleLabel(paddle)}
             </strong>
             <QrCode
-              value={`${window.location.origin}/paddle/${paddle.qrToken}`}
+              value={paddleService.paddleUrl(paddle.qrToken)}
               size={300}
               className="qr-print-code"
             />
