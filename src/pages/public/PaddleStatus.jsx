@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { paddleService } from "../../services/paddleService";
-import { formatTime12 } from "../../utils/dateUtils";
+import { formatTime12, formatDate } from "../../utils/dateUtils";
 import { useNow } from "../../hooks/useNow";
 
 /** "1h 32m 5s" / "32m 5s" / "5s" — padded with leading zeros per unit. */
@@ -108,6 +108,14 @@ export function PaddleStatus() {
         {status === "in_use" && (
           <div className="paddle-status-times">
             <div>
+              <small>Rental</small>
+              <strong>{data.rental_name || "Guest"}</strong>
+            </div>
+            <div>
+              <small>Date</small>
+              <strong>{formatDate(data.booking_date)}</strong>
+            </div>
+            <div>
               <small>Started</small>
               <strong>{formatTime12(new Date(startMs).toTimeString().slice(0, 5))}</strong>
             </div>
@@ -119,6 +127,14 @@ export function PaddleStatus() {
         )}
         {status === "reserved" && (
           <div className="paddle-status-times">
+            <div>
+              <small>Rental</small>
+              <strong>{data.rental_name || "Guest"}</strong>
+            </div>
+            <div>
+              <small>Date</small>
+              <strong>{formatDate(data.booking_date)}</strong>
+            </div>
             <div>
               <small>Starts at</small>
               <strong>{formatTime12(new Date(startMs).toTimeString().slice(0, 5))}</strong>

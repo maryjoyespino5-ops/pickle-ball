@@ -50,15 +50,14 @@ function deriveStatus(isActive, booking, nowMs) {
 }
 
 /**
- * Parse a booking's rental window as FACILITY time (UTC+8), matching how the
- * get_paddle_status RPC interprets booking_date + start_time. Using browser
- * local time here made the admin table disagree with the QR scan page for
- * anyone outside Manila.
+ * Parse a booking's rental window in the BROWSER's timezone — the same way
+ * createBooking writes it and every other screen displays it. (The RPC
+ * mirrors this on the server via the p_offset_minutes argument.)
  */
 function windowFor(bookingRow) {
   if (!bookingRow) return null;
   const startMs = new Date(
-    `${bookingRow.booking_date}T${String(bookingRow.start_time).slice(0, 5)}:00+08:00`,
+    `${bookingRow.booking_date}T${String(bookingRow.start_time).slice(0, 5)}:00`,
   ).getTime();
   const endMs = startMs + Number(bookingRow.duration_hours) * 60 * 60 * 1000;
   return { startMs, endMs };
@@ -258,6 +257,9 @@ export async function getPublicPaddleStatus(token) {
   assertSupabase();
   const { data, error } = await supabase.rpc("get_paddle_status", {
     p_token: String(token || ""),
+    // Interpret the booking's wall-clock in the SAME timezone as the rest of
+    // the app (the viewer's browser). JS: UTC-8 => +480.
+    p_offset_minutes: -new Date().getTimezoneOffset(),
   });
   if (error) throw error;
   return data && data.length ? data[0] : null;
