@@ -7,6 +7,7 @@ export function AdminBookingTable({
   onConfirm,
   onComplete,
   onReschedule,
+  busy = false,
 }) {
   return (
     <div className="table-wrap">
@@ -53,22 +54,32 @@ export function AdminBookingTable({
               </td>
               <td className="table-action-cell">
                 <div className="row-actions">
-                  <button onClick={() => onView(booking)}>View</button>
+                  <button disabled={busy} onClick={() => onView(booking)}>
+                    View
+                  </button>
                   {booking.status === "pending" && (
-                    <button onClick={() => onConfirm(booking)}>Confirm</button>
+                    <button disabled={busy} onClick={() => onConfirm(booking)}>
+                      Confirm
+                    </button>
                   )}
                   {booking.status === "confirmed" && (
-                    <button onClick={() => onComplete(booking)}>
+                    <button
+                      disabled={busy}
+                      onClick={() => onComplete(booking)}>
                       Complete
                     </button>
                   )}
                   {["pending", "confirmed"].includes(booking.status) && (
-                    <button onClick={() => onReschedule(booking)}>
+                    <button
+                      disabled={busy}
+                      onClick={() => onReschedule(booking)}>
                       Reschedule
                     </button>
                   )}
                   {booking.status !== "cancelled" && (
-                    <button onClick={() => onCancel(booking)}>Cancel</button>
+                    <button disabled={busy} onClick={() => onCancel(booking)}>
+                      Cancel
+                    </button>
                   )}
                 </div>
               </td>

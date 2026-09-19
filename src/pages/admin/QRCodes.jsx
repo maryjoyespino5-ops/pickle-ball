@@ -61,6 +61,7 @@ export function QRCodes() {
   const [linkBookings, setLinkBookings] = useState([]);
   const [printOpen, setPrintOpen] = useState(false);
   const [printTargets, setPrintTargets] = useState([]);
+  const [busy, setBusy] = useState(false);
   const canvasMap = useRef({});
   const now = useNow(1000);
   useAutoDismiss(feedback, () => setFeedback(""));
@@ -82,11 +83,7 @@ export function QRCodes() {
   }, [refresh]);
 
   const selectAll = (checked) => {
-    setSelectedIds(
-      new Set(
-        checked ? paddles.filter((p) => p.isActive).map((p) => p.id) : [],
-      ),
-    );
+    setSelectedIds(new Set(checked ? paddles.map((p) => p.id) : []));
   };
   const toggleSelected = (id) => {
     setSelectedIds((prev) => {
@@ -104,6 +101,8 @@ export function QRCodes() {
   }, [paddles, now]);
 
   const runAction = async (fn, successText) => {
+    if (busy) return { ok: false, message: "busy" };
+    setBusy(true);
     setActionError("");
     try {
       await fn();
@@ -114,6 +113,8 @@ export function QRCodes() {
       const message = err.message || "Action failed. Try again.";
       setActionError(message);
       return { ok: false, message };
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -386,29 +387,40 @@ return (
                     </td>
                     <td className="table-action-cell" data-label="Actions">
                       <div className="row-actions qr-row-actions">
-                        <button onClick={() => openLink(paddle)}>
+                        <button disabled={busy} onClick={() => openLink(paddle)}>
                           {booking ? "Unlink" : "Link booking"}
                         </button>
-                        <button onClick={() => setEditTarget({ ...paddle })}>
+                        <button
+                          disabled={busy}
+                          onClick={() => setEditTarget({ ...paddle })}>
                           Edit
                         </button>
-                        <button onClick={() => handleRegenerateQr(paddle)}>
+                        <button
+                          disabled={busy}
+                          onClick={() => handleRegenerateQr(paddle)}>
                           Generate QR
                         </button>
-                        <button onClick={() => handleDownloadQr(paddle)}>
+                        <button
+                          disabled={busy}
+                          onClick={() => handleDownloadQr(paddle)}>
                           Download
                         </button>
                         <button
+                          disabled={busy}
                           onClick={() => {
                             setPrintTargets([paddle]);
                             setPrintOpen(true);
                           }}>
                           Print
                         </button>
-                        <button onClick={() => handleToggleActive(paddle)}>
+                        <button
+                          disabled={busy}
+                          onClick={() => handleToggleActive(paddle)}>
                           {paddle.isActive ? "Deactivate" : "Activate"}
                         </button>
-                        <button onClick={() => setDeleteTarget(paddle)}>
+                        <button
+                          disabled={busy}
+                          onClick={() => setDeleteTarget(paddle)}>
                           Delete
                         </button>
                       </div>
@@ -463,11 +475,15 @@ return (
               <span className="error-message">{actionError}</span>
             )}
             <div>
-              <button className="button danger" onClick={handleDelete}>
-                Delete paddle
+              <button
+                className="button danger"
+                disabled={busy}
+                onClick={handleDelete}>
+                {busy ? "Deleting..." : "Delete paddle"}
               </button>
               <button
                 className="button outline"
+                disabled={busy}
                 onClick={() => setDeleteTarget(null)}>
                 Keep paddle
               </button>
