@@ -1,5 +1,4 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { todayISO } from "../utils/dateUtils";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
@@ -8,6 +7,15 @@ function assertSupabase() {
     );
   }
 }
+
+/** The facility operates in Manila time — the public RPC uses it too. */
+const FACILITY_TZ = "Asia/Manila";
+
+/** Today's date (YYYY-MM-DD) in facility time, independent of the browser tz. */
+export function facilityTodayISO() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: FACILITY_TZ });
+}
+
 
 /** Paddle QR tokens follow the /paddle/:token route, e.g. paddle-001. */
 export function qrTokenFor(paddleNumber) {
@@ -41,13 +49,41 @@ function deriveStatus(isActive, booking, nowMs) {
   return "available";
 }
 
+/**
+ * Parse a booking's rental window as FACILITY time (UTC+8), matching how the
+ * get_paddle_status RPC interprets booking_date + start_time. Using browser
+ * local time here made the admin table disagree with the QR scan page for
+ * anyone outside Manila.
+ */
 function windowFor(bookingRow) {
   if (!bookingRow) return null;
   const startMs = new Date(
-    `${bookingRow.booking_date}T${String(bookingRow.start_time).slice(0, 5)}:00`,
+    `${bookingRow.booking_date}T${String(bookingRow.start_time).slice(0, 5)}:00+08:00`,
   ).getTime();
   const endMs = startMs + Number(bookingRow.duration_hours) * 60 * 60 * 1000;
   return { startMs, endMs };
+}
+
+/**
+ * Pick the booking that drives a paddle's status — the same rule the public
+ * RPC applies: the currently active rental first, otherwise the soonest
+ * upcoming one. Finished rentals are ignored so an earlier slot can never
+ * mask a later one that is in use right now.
+ */
+function pickBooking(bookingRows, nowMs) {
+  let active = null;
+  let upcoming = null;
+  for (const row of bookingRows) {
+    const window = windowFor(row);
+    if (!window) continue;
+    if (nowMs >= window.endMs) continue; // finished — irrelevant
+    if (nowMs >= window.startMs) {
+      if (!active || window.endMs < windowFor(active).endMs) active = row;
+    } else if (!upcoming || window.startMs < windowFor(upcoming).startMs) {
+      upcoming = row;
+    }
+  }
+  return active || upcoming || null;
 }
 
 function toPaddle(row, bookingMap = {}, profileMap = {}) {
@@ -95,17 +131,31 @@ export async function getPaddles() {
       .select(
         "booking_number, user_id, paddle_id, court_id, booking_date, start_time, duration_hours, status, customer_name, courts(name)",
       )
-      .eq("booking_date", todayISO())
-      .in("status", ["upcoming", "confirmed"]),
+      // From facility-today onward (not strictly today): a paddle linked to a
+      // future booking must show Reserved, and a booking from any date that is
+      // currently inside its rental window must show In Use.
+      .gte("booking_date", facilityTodayISO())
+      .in("status", ["upcoming", "confirmed"])
+      .order("booking_date")
+      .order("start_time"),
     supabase.from("profiles").select("id, full_name, email"),
   ]);
   if (paddleResult.error) throw paddleResult.error;
   if (bookingResult.error) throw bookingResult.error;
   if (profileResult.error) throw profileResult.error;
 
-  const bookingMap = {};
+  // Group linked bookings per paddle, then apply the same pick rule as the
+  // public RPC (active rental first, else the soonest upcoming one).
+  const byPaddle = {};
   (bookingResult.data || []).forEach((b) => {
-    if (b.paddle_id && !bookingMap[b.paddle_id]) bookingMap[b.paddle_id] = b;
+    if (!b.paddle_id) return;
+    if (!byPaddle[b.paddle_id]) byPaddle[b.paddle_id] = [];
+    byPaddle[b.paddle_id].push(b);
+  });
+  const bookingMap = {};
+  Object.entries(byPaddle).forEach(([paddleId, rows]) => {
+    const picked = pickBooking(rows, Date.now());
+    if (picked) bookingMap[paddleId] = picked;
   });
   const profileMap = Object.fromEntries(
     (profileResult.data || []).map((p) => [p.id, p]),
