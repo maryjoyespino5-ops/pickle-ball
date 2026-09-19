@@ -15,6 +15,7 @@ const groups = [
     label: "MANAGEMENT",
     links: [
       ["Courts", "/admin/courts", "court"],
+      ["QR Codes", "/admin/qr-codes", "qr"],
       ["Customers", "/admin/customers", "customers"],
       ["Payments", "/admin/payments", "payments"],
     ],

@@ -38,6 +38,8 @@ function toAppBooking(row) {
     id: row.booking_number,
     courtId: row.court_id,
     courtName: row.courts?.name || "Court",
+    paddleId: row.paddle_id,
+    paddleNumber: row.paddles?.paddle_number || "",
     date: row.booking_date,
     time: formatTime(row.start_time),
     duration: Number(row.duration_hours),
@@ -49,7 +51,7 @@ function toAppBooking(row) {
 }
 
 const bookingSelect =
-  "id, booking_number, user_id, court_id, booking_date, start_time, duration_hours, amount, status, payment_status, created_at, courts(name)";
+  "id, booking_number, user_id, court_id, paddle_id, booking_date, start_time, duration_hours, amount, status, payment_status, created_at, courts(name), paddles(paddle_number, name)";
 
 const adminSelect = `${bookingSelect}, customer_name, customer_email, customer_phone, payments(method)`;
 
@@ -167,6 +169,8 @@ function toAdminBooking(row, profile) {
     phone: row.customer_phone || profile?.phone || "",
     courtId: row.court_id,
     courtName: row.courts?.name || "Court",
+    paddleId: row.paddle_id,
+    paddleNumber: row.paddles?.paddle_number || "",
     date: row.booking_date,
     time: formatTime(row.start_time),
     duration: Number(row.duration_hours),
@@ -246,6 +250,7 @@ export async function updateBooking(id, changes) {
   const payload = {};
   if (changes.status) payload.status = changes.status;
   if (changes.paymentStatus) payload.payment_status = changes.paymentStatus;
+  if (changes.paddleId !== undefined) payload.paddle_id = changes.paddleId || null;
   if (changes.courtId) payload.court_id = await resolveCourtId(changes.courtId);
   if (changes.date) payload.booking_date = changes.date;
   if (changes.time) payload.start_time = changes.time;
@@ -328,6 +333,18 @@ export async function rescheduleBooking(id, { courtId, date, time }) {
   return updateBooking(id, { courtId: resolvedCourtId, date, time });
 }
 
+/** Link an existing booking to a physical paddle (QR Code management). */
+export async function assignPaddleToBooking(paddleId, bookingNumber) {
+  assertSupabase();
+  return updateBooking(bookingNumber, { paddleId });
+}
+
+/** Release a paddle from its booking (the booking itself is untouched). */
+export async function unassignPaddleFromBooking(bookingNumber) {
+  assertSupabase();
+  return updateBooking(bookingNumber, { paddleId: null });
+}
+
 export const bookingService = {
   getMyBookings,
   getBooking,
@@ -337,5 +354,7 @@ export const bookingService = {
   updateBooking,
   createAdminBooking,
   rescheduleBooking,
+  assignPaddleToBooking,
+  unassignPaddleFromBooking,
 };
 

@@ -1661,13 +1661,14 @@ select {
     line-height: 1;
   }
   .customer-shell .sidebar-logout {
+    align-items: center;
     align-self: stretch;
     background: transparent;
     border: 0;
     border-radius: 12px;
     color: #abc2b9;
     display: flex;
-    flex: 1 0 64px;
+    flex: 0 0 64px;
     flex-direction: column;
     font-size: 10px;
     gap: 4px;
@@ -2660,8 +2661,11 @@ select {
     padding-bottom: 88px;
   }
   .admin-sidebar {
+    align-items: center;
     bottom: 0;
     box-shadow: 0 -10px 30px rgba(6, 30, 25, 0.45);
+    flex-direction: row;
+    gap: 4px;
     height: auto;
     left: 0;
     min-height: auto;
@@ -2683,7 +2687,9 @@ select {
   }
   .admin-nav-groups {
     display: flex;
+    flex: 1 1 auto;
     gap: 4px;
+    min-width: 0;
     overflow-x: auto;
     padding-bottom: 0;
     scrollbar-width: none;
@@ -2725,19 +2731,22 @@ select {
     width: auto;
   }
   .admin-logout {
+    align-items: center;
     align-self: stretch;
     background: transparent;
     border: 0;
     border-radius: 12px;
     color: #abc2b9;
     display: flex;
+    flex: 0 0 auto;
     flex-direction: column;
     font-size: 10px;
     gap: 4px;
     justify-content: center;
-    margin: 2px 0 0;
-    min-height: 44px;
-    padding: 6px 10px;
+    margin: 0;
+    min-height: 52px;
+    min-width: 44px;
+    padding: 8px 6px;
     text-align: center;
   }
   .admin-logout:hover {
@@ -3039,5 +3048,359 @@ select {
   }
   .admin-page {
     padding: 20px 12px 40px;
+  }
+}
+/* ==========================================================================
+   QR Code management (paddles) — admin, public scan page, and print sheet
+   ========================================================================== */
+
+.qr-heading-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.qr-stat-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 22px;
+}
+
+.qr-stat {
+  background: #fff;
+  border: 1px solid #e2e9e3;
+  border-top: 3px solid #143b35;
+  padding: 17px 18px;
+}
+
+.qr-stat strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 27px;
+}
+
+.qr-stat span {
+  color: #81968e;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qr-stat:nth-child(2) {
+  border-top-color: #75b58b;
+}
+.qr-stat:nth-child(3) {
+  border-top-color: #f3cc63;
+}
+.qr-stat:nth-child(4) {
+  border-top-color: #789bca;
+}
+
+.qr-preview-cell {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 56px minmax(96px, 1fr);
+}
+
+.qr-preview {
+  background: #fff;
+  border: 1px solid #e4ebe5;
+  display: block;
+  height: 56px;
+  padding: 3px;
+  width: 56px;
+}
+
+.qr-remaining {
+  color: #c45c44;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+}
+
+.paddle-table .row-actions {
+  flex-wrap: wrap;
+}
+
+.qr-regenerate-row {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.qr-link-help {
+  color: #668078;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.qr-link-error {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.qr-link-list {
+  display: grid;
+  gap: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.qr-link-row {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e4ebe5;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 13px 15px;
+}
+
+.qr-link-row strong {
+  display: block;
+  font-size: 12px;
+}
+
+.qr-link-row small {
+  color: #889d94;
+  display: block;
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.qr-link-row button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.qr-print-preview {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0 22px;
+}
+/* ---------------------------------------------------------------------------
+ * Print sheet. Hidden on screen; when the browser prints, ONLY this layout is
+ * shown — one labelled card per paddle with the QR code to scan.
+ * ------------------------------------------------------------------------- */
+
+.qr-print-sheet {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .qr-print-sheet,
+  .qr-print-sheet * {
+    visibility: visible;
+  }
+  .qr-print-sheet {
+    display: block;
+    left: 0;
+    position: absolute;
+    top: 0;
+  }
+  .qr-print-card {
+    break-inside: avoid;
+    margin: 8pt;
+    width: 250pt;
+  }
+}
+
+.qr-print-card {
+  align-items: center;
+  background: #fff;
+  border: 1.5pt solid #143b35;
+  border-radius: 10pt;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16pt;
+  text-align: center;
+}
+
+.qr-print-kicker {
+  color: #c06a4c;
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 0;
+}
+
+.qr-print-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 21pt;
+  margin: 6pt 0 12pt;
+}
+
+.qr-print-code {
+  height: 150pt;
+  width: 150pt;
+}
+
+.qr-print-caption {
+  color: #4f6c63;
+  font-size: 8.5pt;
+  letter-spacing: 0.05em;
+  margin-top: 12pt;
+}
+
+/* ---------------------------------------------------------------------------
+ * Public scan page (/paddle/:token) — mobile-first, phone-optimised.
+ * ------------------------------------------------------------------------- */
+
+.paddle-status-page {
+  align-items: center;
+  background: radial-gradient(120% 120% at 50% 0%, #1f5b4e 0%, #0e2e28 60%);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.paddle-status-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 26px 70px rgba(8, 30, 25, 0.45);
+  max-width: 430px;
+  padding: 36px 28px 32px;
+  text-align: center;
+  width: 100%;
+}
+
+.paddle-status-mark {
+  border-radius: 50%;
+  height: 56px;
+  object-fit: cover;
+  width: 56px;
+}
+
+.paddle-status-card h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 44px;
+  letter-spacing: -1.5px;
+  margin: 12px 0 2px;
+}
+
+.paddle-status-name {
+  color: #789087;
+  font-size: 13px;
+  margin: 0 0 22px;
+}
+
+.paddle-status-badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 15px;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px 24px;
+}
+
+.paddle-status-badge.available {
+  background: #dceee2;
+  color: #2e7d4f;
+}
+.paddle-status-badge.in-use {
+  background: #fbe3da;
+  color: #c0422a;
+}
+.paddle-status-badge.reserved {
+  background: #fbefcf;
+  color: #a87923;
+}
+.paddle-status-badge.disabled {
+  background: #e9e9e4;
+  color: #78857f;
+}
+
+.paddle-status-headline {
+  color: #668078;
+  font-size: 12px;
+  margin: 13px 0 0;
+}
+
+.paddle-status-times {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 28px;
+}
+
+.paddle-status-times > div {
+  background: #f4f7f2;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.paddle-status-times small {
+  color: #81968e;
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.paddle-status-times strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 21px;
+  margin-top: 4px;
+}
+
+.paddle-status-countdown {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin-top: 28px;
+}
+
+.paddle-status-countdown small {
+  color: #81968e;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.paddle-status-countdown strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 46px;
+  letter-spacing: -1px;
+}
+
+.paddle-status-countdown.live strong {
+  color: #c0422a;
+}
+
+.paddle-status-cta {
+  color: #668078;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 26px 0 0;
+}
+
+.paddle-status-loading {
+  color: #d5e5dc;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .qr-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .paddle-status-card {
+    padding: 30px 20px 26px;
+  }
+  .paddle-status-card h1 {
+    font-size: 38px;
+  }
+  .paddle-status-countdown strong {
+    font-size: 40px;
   }
 }

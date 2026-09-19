@@ -10,6 +10,7 @@ const titles = {
   "/admin/bookings": "Bookings",
   "/admin/calendar": "Calendar",
   "/admin/courts": "Courts",
+  "/admin/qr-codes": "QR Codes",
   "/admin/customers": "Customers",
   "/admin/payments": "Payments",
   "/admin/reports": "Reports",

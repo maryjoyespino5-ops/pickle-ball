@@ -8,6 +8,7 @@ import { Courts } from "../pages/public/Courts";
 import { Availability } from "../pages/public/Availability";
 import { Pricing } from "../pages/public/Pricing";
 import { Contact } from "../pages/public/Contact";
+import { PaddleStatus } from "../pages/public/PaddleStatus";
 import { Login } from "../pages/auth/Login";
 import { Register } from "../pages/auth/Register";
 import { ForgotPassword } from "../pages/auth/ForgotPassword";
@@ -28,6 +29,7 @@ import { Courts as AdminCourts } from "../pages/admin/Courts";
 import { Customers as AdminCustomers } from "../pages/admin/Customers";
 import { Payments as AdminPayments } from "../pages/admin/Payments";
 import { Reports as AdminReports } from "../pages/admin/Reports";
+import { QRCodes as AdminQRCodes } from "../pages/admin/QRCodes";
 import { Settings as AdminSettings } from "../pages/admin/Settings";
 
 function PublicLayout() {
@@ -81,6 +83,7 @@ export function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
+      <Route path="/paddle/:token" element={<PaddleStatus />} />
       <Route
         element={
           <ProtectedRoute>
@@ -104,6 +107,7 @@ export function AppRoutes() {
         <Route path="/admin/bookings" element={<AdminBookings />} />
         <Route path="/admin/calendar" element={<AdminCalendar />} />
         <Route path="/admin/courts" element={<AdminCourts />} />
+        <Route path="/admin/qr-codes" element={<AdminQRCodes />} />
         <Route path="/admin/customers" element={<AdminCustomers />} />
         <Route path="/admin/payments" element={<AdminPayments />} />
         <Route path="/admin/reports" element={<AdminReports />} />
