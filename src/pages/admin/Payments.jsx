@@ -6,6 +6,7 @@ import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 export function Payments() {
   const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
@@ -14,13 +15,19 @@ export function Payments() {
   });
   const [refundTarget, setRefundTarget] = useState(null);
   const [actionError, setActionError] = useState("");
-  useEffect(() => {
+  const load = () => {
+    setActionError("");
+    setLoading(true);
     paymentService
       .getPayments()
       .then(setPayments)
       .catch((err) =>
         setActionError(err.message || "Could not load payments."),
-      );
+      )
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    load();
   }, []);
   const markPaid = async (id) => {
     setActionError("");
@@ -94,7 +101,21 @@ export function Payments() {
           <option value="refunded">Refunded</option>
         </select>
       </div>
-      {actionError && <ErrorMessage message={actionError} />}
+      {actionError && (
+        <div className="admin-load-row">
+          <ErrorMessage message={actionError} />
+          <button className="button outline" type="button" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
+      {loading ? (
+        <p className="loading-state">Loading payments...</p>
+      ) : visible.length === 0 ? (
+        <div className="empty-panel">
+          No payments found. Try different filters.
+        </div>
+      ) : (
       <div className="table-wrap">
         <table className="admin-table">
           <thead>
@@ -153,6 +174,7 @@ export function Payments() {
           </tbody>
         </table>
       </div>
+      )}
       {selected && (
         <Modal
           title={`Payment ${selected.id}`}

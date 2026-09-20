@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { reportService } from "../../services/reportService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { debounce } from "../../utils/debounce";
@@ -24,6 +25,7 @@ function weekdayLetter(isoDate) {
 
 export function Reports() {
   const [report, setReport] = useState(null);
+  const [loadError, setLoadError] = useState("");
   const [filters, setFilters] = useState({
     from: isoDateOffset(30),
     to: isoDateOffset(0),
@@ -32,18 +34,26 @@ export function Reports() {
     paymentStatus: "all",
   });
   const requestId = useMemo(() => ({ current: 0 }), []);
+  const fetchReport = (activeFilters) => {
+    const myRequest = (requestId.current += 1);
+    setLoadError("");
+    reportService
+      .getReport(activeFilters)
+      .then((next) => {
+        // Ignore stale responses when filters changed mid-flight (B32).
+        if (requestId.current === myRequest) setReport(next);
+      })
+      .catch((err) => {
+        if (requestId.current === myRequest) {
+          setReport(null);
+          setLoadError(
+            err.message || "Could not build the report. Try again.",
+          );
+        }
+      });
+  };
   const debouncedFetch = useMemo(
-    () =>
-      debounce((activeFilters) => {
-        const myRequest = (requestId.current += 1);
-        reportService
-          .getReport(activeFilters)
-          .then((next) => {
-            // Ignore stale responses when filters changed mid-flight (B32).
-            if (requestId.current === myRequest) setReport(next);
-          })
-          .catch(() => {});
-      }, 300),
+    () => debounce(fetchReport, 300),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -80,6 +90,20 @@ export function Reports() {
     link.click();
     URL.revokeObjectURL(url);
   };
+  if (loadError)
+    return (
+      <div className="admin-page">
+        <div className="admin-load-row">
+          <ErrorMessage message={loadError} />
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => fetchReport(filters)}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
   if (!report)
     return (
       <div className="admin-page">
@@ -199,7 +223,7 @@ export function Reports() {
           <div className="bar-chart">
             {report.trend.map((item) => (
               <div className="bar-column" key={item.date}>
-                <span style={{ height: `${item.count * 10}%` }} />
+                <span style={{ height: `${Math.min(item.count * 10, 100)}%` }} />
                 <small>{weekdayLetter(item.date)}</small>
               </div>
             ))}

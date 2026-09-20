@@ -1,20 +1,61 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CourtStatus } from "../../components/courts/CourtStatus";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { courtService } from "../../services/courtService";
-import { HOURLY_RATE } from "../../lib/constants";
+import { formatCurrency } from "../../utils/currencyUtils";
+
 export function Courts() {
   const [courts, setCourts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const navigate = useNavigate();
+  const load = () => {
+    setLoadError("");
+    setLoading(true);
+    courtService
+      .getManagedCourts()
+      .then(setCourts)
+      .catch((err) =>
+        setLoadError(err.message || "Could not load courts. Try again."),
+      )
+      .finally(() => setLoading(false));
+  };
   useEffect(() => {
-    courtService.getManagedCourts().then(setCourts);
+    load();
   }, []);
   const update = async (changes) => {
-    const next = await courtService.updateCourt(selected.id, changes);
-    setCourts(next);
-    setSelected(null);
+    if (!selected) return;
+    if (!String(selected.name || "").trim()) {
+      setSaveError("Court name is required.");
+      return;
+    }
+    if (!(Number(selected.price) >= 0)) {
+      setSaveError("Price per hour must be zero or more.");
+      return;
+    }
+    setSaveError("");
+    setSaving(true);
+    try {
+      const next = await courtService.updateCourt(selected.id, {
+        enabled: selected.enabled,
+        maintenance: selected.maintenance,
+        name: selected.name,
+        description: selected.description,
+        price: selected.price,
+        image: selected.image,
+      });
+      setCourts(next);
+      setSelected(null);
+    } catch (err) {
+      setSaveError(err.message || "Could not save this court. Try again.");
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <div className="admin-page">
@@ -26,50 +67,65 @@ export function Courts() {
         </div>
         <span className="result-count">{courts.length} courts total</span>
       </div>
-      <div className="admin-court-grid">
-        {courts.map((court) => (
-          <article className="managed-court-card" key={court.id}>
-            <div className={`managed-court-art ${court.accent}`}>
-              <span>{court.name.replace("Court ", "0")}</span>
-            </div>
-            <div className="managed-court-body">
-              <div className="managed-court-heading">
-                <div>
-                  <span className="admin-kicker">PICKLEBALL COURT</span>
-                  <h3>{court.name}</h3>
+      {loadError && (
+        <div className="admin-load-row">
+          <ErrorMessage message={loadError} />
+          <button className="button outline" type="button" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
+      {loading ? (
+        <p className="loading-state">Loading courts...</p>
+      ) : (
+        <div className="admin-court-grid">
+          {courts.map((court) => (
+            <article className="managed-court-card" key={court.id}>
+              <div className={`managed-court-art ${court.accent}`}>
+                <span>{court.name.replace("Court ", "0")}</span>
+              </div>
+              <div className="managed-court-body">
+                <div className="managed-court-heading">
+                  <div>
+                    <span className="admin-kicker">PICKLEBALL COURT</span>
+                    <h3>{court.name}</h3>
+                  </div>
+                  <CourtStatus
+                    status={court.maintenance ? "maintenance" : court.status}
+                  />
                 </div>
-                <CourtStatus
-                  status={court.maintenance ? "maintenance" : court.status}
-                />
+                <p>{court.description}</p>
+                <div className="managed-court-meta">
+                  <strong>
+                    {formatCurrency(court.price)}
+                    <small>/ hour</small>
+                  </strong>
+                  <span>
+                    {court.enabled
+                      ? "Available for booking"
+                      : "Temporarily disabled"}
+                  </span>
+                </div>
+                <div className="court-card-actions">
+                  <button
+                    className="button outline"
+                    onClick={() => {
+                      setSaveError("");
+                      setSelected({ ...court });
+                    }}>
+                    Edit court
+                  </button>
+                  <button
+                    className="text-button"
+                    onClick={() => navigate(`/admin/calendar?court=${court.id}`)}>
+                    View availability
+                  </button>
+                </div>
               </div>
-              <p>{court.description}</p>
-              <div className="managed-court-meta">
-                <strong>
-                  ₱{court.price || HOURLY_RATE}
-                  <small>/ hour</small>
-                </strong>
-                <span>
-                  {court.enabled
-                    ? "Available for booking"
-                    : "Temporarily disabled"}
-                </span>
-              </div>
-              <div className="court-card-actions">
-                <button
-                  className="button outline"
-                  onClick={() => setSelected({ ...court })}>
-                  Edit court
-                </button>
-                <button
-                  className="text-button"
-                  onClick={() => navigate(`/admin/calendar?court=${court.id}`)}>
-                  View availability
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+            </article>
+          ))}
+        </div>
+      )}
       {selected && (
         <Modal
           title={`Edit ${selected.name}`}
@@ -140,8 +196,10 @@ export function Courts() {
                 }
               />
             </label>
+            {saveError && <ErrorMessage message={saveError} />}
             <button
               className="button"
+              disabled={saving}
               onClick={() =>
                 update({
                   enabled: selected.enabled,
@@ -150,14 +208,9 @@ export function Courts() {
                   description: selected.description,
                   price: selected.price,
                   image: selected.image,
-                  status: selected.maintenance
-                    ? "maintenance"
-                    : selected.enabled
-                      ? "available"
-                      : "disabled",
                 })
               }>
-              Save changes
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </div>
         </Modal>

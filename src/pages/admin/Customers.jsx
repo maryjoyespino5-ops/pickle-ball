@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { customerService } from "../../services/customerService";
 import { formatCurrency } from "../../utils/currencyUtils";
@@ -8,29 +9,39 @@ import { debounce } from "../../utils/debounce";
 export function Customers() {
   const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(null);
   const [details, setDetails] = useState(null);
   const navigate = useNavigate();
   const requestId = useMemo(() => ({ current: 0 }), []);
+  const fetchCustomers = (activeSearch) => {
+    const myRequest = (requestId.current += 1);
+    setLoadError("");
+    customerService
+      .getCustomers(activeSearch)
+      .then((rows) => {
+        // Ignore stale responses when the search changed mid-flight (B32).
+        if (requestId.current === myRequest) setCustomers(rows);
+      })
+      .catch((err) => {
+        if (requestId.current === myRequest)
+          setLoadError(err.message || "Could not load customers. Try again.");
+      })
+      .finally(() => {
+        if (requestId.current === myRequest) setLoading(false);
+      });
+  };
   const debouncedFetch = useMemo(
-    () =>
-      debounce((activeSearch) => {
-        const myRequest = (requestId.current += 1);
-        customerService
-          .getCustomers(activeSearch)
-          .then((rows) => {
-            // Ignore stale responses when the search changed mid-flight (B32).
-            if (requestId.current === myRequest) setCustomers(rows);
-          })
-          .catch(() => {});
-      }, 300),
+    () => debounce(fetchCustomers, 300),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   useEffect(() => {
     debouncedFetch(search);
     return () => debouncedFetch.cancel();
-  }, [search, debouncedFetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
   const openDetails = (customer) => {
     setSelected(customer);
     setDetails(null);
@@ -56,6 +67,24 @@ export function Customers() {
           onChange={(event) => setSearch(event.target.value)}
         />
       </div>
+      {loadError && (
+        <div className="admin-load-row">
+          <ErrorMessage message={loadError} />
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => fetchCustomers(search)}>
+            Try again
+          </button>
+        </div>
+      )}
+      {loading ? (
+        <p className="loading-state">Loading customers...</p>
+      ) : customers.length === 0 && !loadError ? (
+        <div className="empty-panel">
+          No customers found. Try a different search.
+        </div>
+      ) : (
       <div className="table-wrap">
         <table className="admin-table">
           <thead>
@@ -98,6 +127,7 @@ export function Customers() {
           </tbody>
         </table>
       </div>
+      )}
       {selected && (
         <Modal title="Customer profile" onClose={() => setSelected(null)}>
           <div className="customer-details">

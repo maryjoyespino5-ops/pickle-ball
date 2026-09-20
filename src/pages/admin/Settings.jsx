@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../components/common/Button";
 import { settingsService } from "../../services/settingsService";
+import { facilityService } from "../../services/facilityService";
 import { authService } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -25,6 +26,7 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     settingsService
@@ -58,8 +60,23 @@ export function Settings() {
       setError("New password and confirmation must match.");
       return;
     }
+    if (
+      values.newPassword &&
+      String(values.newPassword).length < 8
+    ) {
+      setError("New password must be at least 8 characters long.");
+      return;
+    }
+    if (values.opening && values.closing && values.opening >= values.closing) {
+      setError("Opening time must be earlier than closing time.");
+      return;
+    }
+    setSaving(true);
     try {
       await settingsService.updateFacilitySettings(values);
+      // The public info cache is shared with every screen; drop it so the new
+      // opening hours / durations take effect immediately everywhere.
+      facilityService.resetPublicInfoCache();
       if (values.adminName !== user.fullName) {
         await authService.updateProfile({
           fullName: values.adminName,
@@ -75,6 +92,8 @@ export function Settings() {
       setSaved(true);
     } catch (saveError) {
       setError(saveError.message);
+    } finally {
+      setSaving(false);
     }
   };
   const cancel = () => {
@@ -92,7 +111,8 @@ export function Settings() {
           newPassword: "",
           confirmPassword: "",
         })),
-      );
+      )
+      .catch((loadError) => setError(loadError.message));
   };
   return (
     <form className="admin-page settings-page" onSubmit={save}>
@@ -241,7 +261,9 @@ export function Settings() {
         <button className="button outline" type="button" onClick={cancel}>
           Cancel
         </button>
-        <Button type="submit">Save settings</Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save settings"}
+        </Button>
       </div>
     </form>
   );

@@ -37,7 +37,7 @@ export function BookingDetails({ booking, onAction, onReschedule }) {
         </div>
       </div>
       <div className="details-actions">
-        {booking.status === "pending" && (
+        {booking.status === "upcoming" && (
           <button className="button" onClick={() => onAction("confirmed")}>
             Confirm booking
           </button>
@@ -54,10 +54,12 @@ export function BookingDetails({ booking, onAction, onReschedule }) {
             Mark completed
           </button>
         )}
-        <button className="text-button" onClick={() => onAction("cancelled")}>
-          Cancel booking
-        </button>
-        {["pending", "confirmed"].includes(booking.status) && (
+        {booking.status !== "cancelled" && (
+          <button className="text-button" onClick={() => onAction("cancelled")}>
+            Cancel booking
+          </button>
+        )}
+        {["upcoming", "confirmed"].includes(booking.status) && (
           <button className="button outline" onClick={onReschedule}>
             Reschedule
           </button>

@@ -4,11 +4,16 @@ import { AdminBookingTable } from "../../components/dashboard/AdminBookingTable"
 import { BookingDetails } from "../../components/booking/BookingDetails";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
+import { Pagination } from "../../components/common/Pagination";
 import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
+import { facilityService, buildCourtHours } from "../../services/facilityService";
 import { debounce } from "../../utils/debounce";
 import { formatTime12, todayISO } from "../../utils/dateUtils";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
+
+const PAGE_SIZE = 10;
+
 export function Bookings() {
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
@@ -20,6 +25,8 @@ export function Bookings() {
   });
   const [bookings, setBookings] = useState([]);
   const [courts, setCourts] = useState([]);
+  const [hours, setHours] = useState([]);
+  const [page, setPage] = useState(1);
   const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -57,10 +64,16 @@ export function Bookings() {
       .getManagedCourts()
       .then(setCourts)
       .catch(() => setCourts([]));
+    // Real facility hours drive the reschedule time options (no hardcoding).
+    facilityService
+      .getPublicInfo()
+      .then((info) => setHours(buildCourtHours(info)))
+      .catch(() => setHours([]));
   }, []);
 
   useEffect(() => {
     debouncedFetch(filters);
+    setPage(1);
     return () => debouncedFetch.cancel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
@@ -109,7 +122,7 @@ export function Bookings() {
       setRescheduleTarget(null);
       setFeedback(`Booking ${next.id} rescheduled.`);
     } catch (error) {
-      setFeedback(error.message);
+      setActionError(error.message || "Could not reschedule this booking.");
     }
   };
   const action = (type) => (booking) =>
@@ -183,8 +196,11 @@ export function Bookings() {
           value={filters.court}
           onChange={(event) => setFilter("court", event.target.value)}>
           <option value="all">All courts</option>
-          <option value="court-1">Court 1</option>
-          <option value="court-2">Court 2</option>
+          {courts.map((court) => (
+            <option key={court.id} value={court.id}>
+              {court.name}
+            </option>
+          ))}
         </select>
         <select
           value={filters.status}
@@ -205,14 +221,21 @@ export function Bookings() {
         </select>
       </div>
       {bookings.length ? (
-        <AdminBookingTable
-          bookings={bookings}
-          onView={setSelected}
-          onCancel={action("cancel")}
-          onConfirm={action("confirmed")}
-          onComplete={action("completed")}
-          onReschedule={action("reschedule")}
-        />
+        <>
+          <AdminBookingTable
+            bookings={bookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            onView={setSelected}
+            onCancel={action("cancel")}
+            onConfirm={action("confirmed")}
+            onComplete={action("completed")}
+            onReschedule={action("reschedule")}
+          />
+          <Pagination
+            page={page}
+            pageCount={Math.ceil(bookings.length / PAGE_SIZE)}
+            onChange={setPage}
+          />
+        </>
       ) : (
         <div className="empty-panel">
           No bookings found. There are no bookings matching your filters.
@@ -288,23 +311,10 @@ export function Bookings() {
                 onChange={(event) =>
                   setReschedule({ ...reschedule, time: event.target.value })
                 }>
-                {[
-                  "07:00",
-                  "08:00",
-                  "09:00",
-                  "10:00",
-                  "11:00",
-                  "12:00",
-                  "13:00",
-                  "14:00",
-                  "15:00",
-                  "16:00",
-                  "17:00",
-                  "18:00",
-                  "19:00",
-                  "20:00",
-                  "21:00",
-                ].map((time) => (
+                {(hours.length
+                  ? hours
+                  : ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"]
+                ).map((time) => (
                   <option key={time} value={time}>
                     {formatTime12(time)}
                   </option>

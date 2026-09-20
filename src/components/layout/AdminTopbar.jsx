@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { bookingService } from "../../services/bookingService";
 import { todayISO } from "../../utils/dateUtils";
 import { Icon } from "../common/Icon";
@@ -36,8 +37,9 @@ export function AdminTopbar() {
     .map((part) => part[0].toUpperCase())
     .join("");
 
-  // Real notification source: bookings still pending confirmation today.
-  useEffect(() => {
+  // Real notification source: bookings still upcoming today. Refreshed on
+  // navigation AND in real time when any booking changes anywhere.
+  const loadNotifications = useCallback(() => {
     let mounted = true;
     bookingService
       .getAllBookings({ date: todayISO(), status: "upcoming" })
@@ -55,7 +57,19 @@ export function AdminTopbar() {
     return () => {
       mounted = false;
     };
-  }, [pathname]);
+  }, []);
+  useEffect(() => loadNotifications(), [pathname, loadNotifications]);
+  useRealtimeBookings(loadNotifications, true);
+
+  // Close popovers when clicking anywhere outside the topbar actions.
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event) => {
+      if (!event.target.closest(".admin-top-actions")) setOpen(null);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
   const handleLogout = async () => {
     try {
       await logout();

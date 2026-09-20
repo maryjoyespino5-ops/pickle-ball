@@ -59,10 +59,49 @@ export function Calendar() {
   // Realtime: a customer booking elsewhere instantly flips this slot to BOOKED.
   useRealtimeBookings(load, Boolean(date));
   const maxDuration = Number(facility?.maxDuration) || 2;
+  /**
+   * How many consecutive open hours start at `time` on this court? A
+   * multi-hour booking must span open hours — the database rejects overlaps,
+   * so we never offer durations that cannot fit.
+   */
+  const contiguousOpenHours = (court, fromTime) => {
+    if (!court) return 1;
+    const slots = court.slots || [];
+    let count = 0;
+    let cursor = Number(String(fromTime).slice(0, 2));
+    for (;;) {
+      const key = `${String(cursor).padStart(2, "0")}:00`;
+      const found = slots.find((item) => item.time === key);
+      if (!found || !found.available) break;
+      count += 1;
+      cursor += 1;
+    }
+    return Math.max(1, count);
+  };
+  const bookingMaxHours = slot?.available
+    ? Math.max(
+        1,
+        Math.min(
+          4,
+          maxDuration,
+          contiguousOpenHours(slot.court, slot.time),
+        ),
+      )
+    : Math.max(1, Math.min(4, maxDuration));
   const durationOptions = Array.from(
-    { length: Math.max(1, Math.min(4, maxDuration)) },
+    { length: bookingMaxHours },
     (_, index) => index + 1,
   );
+  // Keep the selected duration inside what the clicked slot can fit.
+  useEffect(() => {
+    if (!slot || !slot.available) return;
+    setForm((current) =>
+      current.duration <= bookingMaxHours
+        ? current
+        : { ...current, duration: bookingMaxHours },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slot?.court?.id, slot?.time]);
   const submit = async (event) => {
     event.preventDefault();
     setError("");
@@ -181,7 +220,7 @@ export function Calendar() {
               <label>
                 Duration
                 <select
-                  value={form.duration}
+                  value={Math.min(form.duration, bookingMaxHours)}
                   onChange={(event) =>
                     setForm({ ...form, duration: Number(event.target.value) })
                   }>

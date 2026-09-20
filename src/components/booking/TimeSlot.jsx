@@ -5,12 +5,24 @@ export function TimeSlot({
   available = true,
   selected = false,
   onClick,
+  hint = "",
 }) {
+  // A booked slot always carries the "booked" class so every calendar
+  // (admin calendar, customer booking, public availability) shows the same
+  // orange BOOKED status for the same slot.
+  const title =
+    hint || (available ? "" : "This time is already booked");
   return (
     <button
       type="button"
-      className={`time-slot ${selected ? "selected" : ""}`}
+      className={`time-slot ${available ? "" : "booked"} ${selected ? "selected" : ""}`}
       disabled={!available && !onClick}
+      title={title || undefined}
+      aria-label={
+        available
+          ? `${formatTime12(time)} - open`
+          : `${formatTime12(time)} - booked`
+      }
       onClick={onClick}>
       <span>{formatTime12(time)}</span>
       <small>{available ? "Open" : "Booked"}</small>

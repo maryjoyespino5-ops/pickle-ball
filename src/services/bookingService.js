@@ -122,15 +122,29 @@ export async function cancelBooking(id) {
  * Admin-side (Supabase-backed, RLS grants admins full visibility)
  * ---------------------------------------------------------------------- */
 
-/** id -> profile lookup so admin tables can show customer names. */
+/** id -> profile lookup so admin tables can show customer names.
+ * Cached for 60 seconds — every admin screen (bookings, payments, QR codes,
+ * reports) needs the same map, so refetching all profiles per screen is
+ * wasted work. The short TTL keeps freshly-registered customers visible.
+ */
+let profilesCache = null;
+let profilesCacheAt = 0;
+const PROFILES_CACHE_MS = 60000;
+
 export async function fetchProfilesMap() {
+  const now = Date.now();
+  if (profilesCache && now - profilesCacheAt < PROFILES_CACHE_MS) {
+    return profilesCache;
+  }
   const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, email, phone");
   if (error) throw error;
-  return Object.fromEntries(
+  profilesCache = Object.fromEntries(
     (data || []).map((profile) => [profile.id, profile]),
   );
+  profilesCacheAt = now;
+  return profilesCache;
 }
 
 /**

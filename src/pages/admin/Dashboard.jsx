@@ -4,6 +4,7 @@ import { AdminBookingTable } from "../../components/dashboard/AdminBookingTable"
 import { StatCard } from "../../components/dashboard/StatCard";
 import { BookingDetails } from "../../components/booking/BookingDetails";
 import { CourtStatus } from "../../components/courts/CourtStatus";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
@@ -27,6 +28,8 @@ export function Dashboard() {
   const [courts, setCourts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [actionError, setActionError] = useState("");
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const load = async () => {
     try {
@@ -52,14 +55,40 @@ export function Dashboard() {
       setCancelTarget(booking);
       return;
     }
-    const next = await bookingService.updateBooking(
-      booking.id,
-      action === "paid" ? { paymentStatus: "paid" } : { status: action },
-    );
-    setBookings((items) =>
-      items.map((item) => (item.id === next.id ? next : item)),
-    );
-    setSelected(next);
+    setActionError("");
+    setBusy(true);
+    try {
+      const next = await bookingService.updateBooking(
+        booking.id,
+        action === "paid" ? { paymentStatus: "paid" } : { status: action },
+      );
+      setBookings((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setSelected(next);
+    } catch (err) {
+      setActionError(err.message || "Could not update this booking.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    setActionError("");
+    setBusy(true);
+    try {
+      const next = await bookingService.updateBooking(cancelTarget.id, {
+        status: "cancelled",
+      });
+      setBookings((items) =>
+        items.map((item) => (item.id === next.id ? next : item)),
+      );
+      setCancelTarget(null);
+    } catch (err) {
+      setActionError(err.message || "Could not cancel this booking.");
+    } finally {
+      setBusy(false);
+    }
   };
   const active = bookings.filter((item) => item.status !== "cancelled");
   // "Occupied" = a court with a non-cancelled booking today; maintenance
@@ -150,6 +179,7 @@ export function Dashboard() {
         </div>
         <AdminBookingTable
           bookings={bookings}
+          busy={busy}
           onView={setSelected}
           onCancel={setCancelTarget}
           onConfirm={(booking) => update("confirmed", booking)}
@@ -186,6 +216,7 @@ export function Dashboard() {
           )}
         </div>
       </section>
+      {actionError && <ErrorMessage message={actionError} />}
       {selected && (
         <Modal
           title={
@@ -211,20 +242,13 @@ export function Dashboard() {
             <div>
               <button
                 className="button danger"
-                onClick={async () => {
-                  const next = await bookingService.updateBooking(
-                    cancelTarget.id,
-                    { status: "cancelled" },
-                  );
-                  setBookings((items) =>
-                    items.map((item) => (item.id === next.id ? next : item)),
-                  );
-                  setCancelTarget(null);
-                }}>
-                Cancel booking
+                disabled={busy}
+                onClick={confirmCancel}>
+                {busy ? "Cancelling..." : "Cancel booking"}
               </button>
               <button
                 className="button outline"
+                disabled={busy}
                 onClick={() => setCancelTarget(null)}>
                 Keep booking
               </button>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "../../components/common/Button";
+import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { StatCard } from "../../components/dashboard/StatCard";
 import { BookingCard } from "../../components/booking/BookingCard";
 import { useAuth } from "../../hooks/useAuth";
@@ -18,7 +19,7 @@ function favoriteCourt(bookings, courts) {
 
 export function Dashboard() {
   const { user } = useAuth();
-  const { bookings } = useBookings();
+  const { bookings, loading, error } = useBookings();
   const { courts } = useCourts();
   useScrollReveal();
   const hour = new Date().getHours();
@@ -60,7 +61,11 @@ export function Dashboard() {
               All bookings <span aria-hidden="true">-&gt;</span>
             </Link>
           </div>
-          {next ? (
+          {error ? (
+            <ErrorMessage message="Unable to load your bookings. Please try again later." />
+          ) : loading ? (
+            <p className="loading-state">Loading your bookings...</p>
+          ) : next ? (
             <BookingCard booking={next} />
           ) : (
             <div className="empty-panel">

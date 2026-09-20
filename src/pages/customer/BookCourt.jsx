@@ -56,13 +56,34 @@ export function BookCourt() {
   // while this page is open, the slot grid refreshes from the bookings table.
   useRealtimeBookings(() => load(date), Boolean(date));
 
-  // Drop the selection if the chosen slot is no longer available.
+  // Drop the selection if the chosen slot is no longer available, or if the
+  // selected duration no longer fits the open hours (e.g. the customer
+  // switches to 2 hours but the next hour is taken).
   useEffect(() => {
     if (!selected.courtId || !selected.time) return;
     const court = courts.find((item) => item.id === selected.courtId);
     const slot = court?.slots?.find((item) => item.time === selected.time);
-    if (slot && !slot.available) setSelected({});
-  }, [courts, selected]);
+    if (!slot || !slot.available || !rangeFits(court, selected.time, duration)) {
+      setSelected({});
+    }
+  }, [courts, selected, duration]);
+
+  /**
+   * True when every hour from `time` through `time + hours - 1` is open on
+   * this court. Multi-hour bookings must span consecutive open hours — the
+   * database rejects overlapping bookings.
+   */
+  function rangeFits(court, time, hours) {
+    if (!court || !time) return true;
+    const slots = court.slots || [];
+    const start = Number(String(time).slice(0, 2));
+    for (let offset = 0; offset < hours; offset += 1) {
+      const key = `${String(start + offset).padStart(2, "0")}:00`;
+      const found = slots.find((item) => item.time === key);
+      if (!found || !found.available) return false;
+    }
+    return true;
+  }
 
   const selectedCourt = courts.find((court) => court.id === selected.courtId);
   const durationOptions = Array.from(
@@ -162,24 +183,33 @@ export function BookCourt() {
                   </span>
                 </div>
                 <div className="slot-grid">
-                  {court.slots.map((slot) => (
-                    <TimeSlot
-                      key={slot.time}
-                      {...slot}
-                      selected={
-                        selected.courtId === court.id &&
-                        selected.time === slot.time
-                      }
-                      onClick={
-                        slot.available
-                          ? (event) => {
-                              event.stopPropagation();
-                              setSelected({ courtId: court.id, time: slot.time });
-                            }
-                          : undefined
-                      }
-                    />
-                  ))}
+                  {court.slots.map((slot) => {
+                    const fits = rangeFits(court, slot.time, duration);
+                    const selectable = slot.available && fits;
+                    return (
+                      <TimeSlot
+                        key={slot.time}
+                        {...slot}
+                        selected={
+                          selected.courtId === court.id &&
+                          selected.time === slot.time
+                        }
+                        hint={
+                          slot.available && !fits
+                            ? `Not available for ${duration} hour${duration > 1 ? "s" : ""} — the next hour is taken`
+                            : ""
+                        }
+                        onClick={
+                          selectable
+                            ? (event) => {
+                                event.stopPropagation();
+                                setSelected({ courtId: court.id, time: slot.time });
+                              }
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ))}

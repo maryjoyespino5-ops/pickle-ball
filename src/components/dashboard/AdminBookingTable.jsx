@@ -57,7 +57,7 @@ export function AdminBookingTable({
                   <button disabled={busy} onClick={() => onView(booking)}>
                     View
                   </button>
-                  {booking.status === "pending" && (
+                  {booking.status === "upcoming" && (
                     <button disabled={busy} onClick={() => onConfirm(booking)}>
                       Confirm
                     </button>
@@ -69,7 +69,7 @@ export function AdminBookingTable({
                       Complete
                     </button>
                   )}
-                  {["pending", "confirmed"].includes(booking.status) && (
+                  {["upcoming", "confirmed"].includes(booking.status) && (
                     <button
                       disabled={busy}
                       onClick={() => onReschedule(booking)}>

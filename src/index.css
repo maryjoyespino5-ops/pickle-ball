@@ -807,8 +807,8 @@ body {
   text-align: center;
 }
 .mini-row b.booked {
-  background: #668078;
-  color: #dcebe2;
+  background: #d77b64;
+  color: #fff;
   text-decoration: line-through;
 }
 .availability-mini small {
@@ -829,6 +829,36 @@ body {
 }
 .dot.taken {
   color: #d77b64;
+}
+/* Client-side pagination for admin tables. */
+.pagination {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.pagination .button {
+  padding: 8px 14px;
+  font-size: 12px;
+}
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+}
+.page-number {
+  background: transparent;
+  border: 1px solid #dce6de;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  min-width: 32px;
+  padding: 6px 8px;
+}
+.page-number.active {
+  background: var(--ink, #1f3934);
+  border-color: var(--ink, #1f3934);
+  color: #fff;
 }
 .pricing-teaser {
   text-align: center;
@@ -954,6 +984,32 @@ select {
 }
 .time-slot:disabled small {
   color: #b7beb7;
+}
+.time-slot:disabled {
+  background: #eef0ea;
+  border-color: transparent;
+  color: #a5b0a8;
+  cursor: not-allowed;
+}
+.time-slot:disabled small {
+  color: #b7beb7;
+}
+/* Booked slots: consistent orange BOOKED status everywhere the slot grid is
+   rendered (admin calendar, customer booking, public availability). Placed
+   after :disabled so a booked slot always wins the orange treatment. */
+.time-slot.booked {
+  background: #fbe3da;
+  border-color: #f0c3b1;
+  color: #b3542e;
+}
+.time-slot.booked small {
+  color: #c0422a;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.time-slot.booked:hover {
+  background: #f6d3c6;
 }
 .time-slot.selected,
 .time-slot:not(:disabled):hover {

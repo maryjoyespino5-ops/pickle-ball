@@ -25,11 +25,13 @@ export function Home() {
 
   // B6: the "LIVE AVAILABILITY" panel reads today's real slots (no more
   // hardcoded demo values) and refreshes whenever a booking changes.
+  const [availabilityLoaded, setAvailabilityLoaded] = useState(false);
   const load = () => {
     courtService
       .getAvailability(todayISO())
       .then((rows) => setAvailability(rows))
-      .catch(() => setAvailability([]));
+      .catch(() => setAvailability([]))
+      .finally(() => setAvailabilityLoaded(true));
     facilityService
       .getPublicInfo()
       .then((info) => setFacility(info))
@@ -40,13 +42,13 @@ export function Home() {
   }, []);
   useRealtimeBookings(load, true);
 
+  // Show both open and booked slots so a booked time is visible as a
+  // BOOKED chip on the landing page (same status as the admin calendar).
   const preview = useMemo(
     () =>
       availability.slice(0, 2).map((court) => ({
         name: court.name,
-        slots: (court.slots || [])
-          .filter((slot) => slot.available)
-          .slice(0, 4),
+        slots: (court.slots || []).slice(0, 4),
       })),
     [availability],
   );
@@ -139,22 +141,35 @@ export function Home() {
           </div>
           {preview.length === 0 ? (
             <div className="mini-row">
-              <span>Loading live slots…</span>
+              <span>
+                {availabilityLoaded
+                  ? "No open slots right now."
+                  : "Loading live slots…"}
+              </span>
             </div>
           ) : (
             preview.map((court) => (
               <div className="mini-row" key={court.name}>
                 <span>{court.name}</span>
-                {court.slots.length === 0 ? (
+                {court.slots.length > 0 &&
+                court.slots.every((slot) => !slot.available) ? (
                   <b className="booked">Full</b>
                 ) : (
-                  court.slots.map((slot) => <b key={slot.time}>{slot.time}</b>)
+                  court.slots.map((slot) =>
+                    slot.available ? (
+                      <b key={slot.time}>{slot.time}</b>
+                    ) : (
+                      <b className="booked" key={slot.time}>
+                        {slot.time}
+                      </b>
+                    ),
+                  )
                 )}
               </div>
             ))
           )}
           <small>
-            <i className="dot open" /> Open slots today <i className="dot taken" /> Full
+            <i className="dot open" /> Open slots today <i className="dot taken" /> Booked
           </small>
         </div>
       </section>
