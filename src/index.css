@@ -830,6 +830,9 @@ body {
 .dot.taken {
   color: #d77b64;
 }
+.dot.past {
+  color: #a0a8a0;
+}
 /* Client-side pagination for admin tables. */
 .pagination {
   align-items: center;

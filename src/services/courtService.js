@@ -74,10 +74,15 @@ export async function getAvailability(date) {
   return (courtRows || []).map((court) => ({
     ...toAppCourt(court),
     slots: hours.map((time) => {
-      const past = isPastSlot(date, time);
+      const taken = busy.has(`${court.id}:${time}`);
+      // Only FREE slots are flagged "past" — a booked slot on an earlier
+      // hour/day keeps its orange BOOKED status so admins can still review
+      // who had the court. Free past slots turn grey PAST and can never be
+      // booked again (the DB rejects them too).
+      const past = !taken && isPastSlot(date, time);
       return {
         time,
-        available: !past && !busy.has(`${court.id}:${time}`),
+        available: !taken && !past,
         past,
       };
     }),

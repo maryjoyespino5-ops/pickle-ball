@@ -53,6 +53,8 @@ export function Calendar() {
     }
   };
   useEffect(() => {
+    // Ignore the moment a cleared date input ("") while the admin picks.
+    if (!date) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
@@ -133,14 +135,13 @@ export function Calendar() {
           <span className="admin-kicker">AVAILABILITY PLANNER</span>
           <h2>Calendar</h2>
           <p>
-            Manage both courts at a glance. Click any slot to inspect or create
-            a booking.
+            Manage the courts at a glance. Book future slots, and browse any
+            previous day to review its bookings.
           </p>
         </div>
         <input
           type="date"
           value={date}
-          min={todayIso}
           onChange={(event) => setDate(event.target.value)}
         />
       </div>
@@ -151,7 +152,12 @@ export function Calendar() {
         <span>
           <i className="dot taken" /> Booked
         </span>
-        <span>Click an open slot to create a manual booking</span>
+        <span>
+          <i className="dot past" /> Past (no longer bookable)
+        </span>
+        <span>
+          Click a booked slot to review its details · past times are view-only
+        </span>
       </div>
       {loadError && (
         <div className="admin-load-row">
@@ -264,6 +270,10 @@ export function Calendar() {
               onAction={() => setSlot(null)}
               onReschedule={() => setSlot(null)}
             />
+          ) : isPastSlot(date, slot.time) ? (
+            <div className="empty-panel">
+              This time has already passed. No booking details are available.
+            </div>
           ) : (
             <div className="empty-panel">
               This time is already booked. No booking details are available.
