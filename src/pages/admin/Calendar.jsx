@@ -8,7 +8,7 @@ import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { facilityService } from "../../services/facilityService";
 import { formatCurrency } from "../../utils/currencyUtils";
-import { formatTime12 } from "../../utils/dateUtils";
+import { formatTime12, isPastSlot } from "../../utils/dateUtils";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 export function Calendar() {
   const [searchParams] = useSearchParams();
@@ -164,7 +164,9 @@ export function Calendar() {
       <CalendarView
         courts={courts}
         facility={facility}
-        onSlotClick={(court, time, available) =>
+        onSlotClick={(court, time, available) => {
+          // Hours that already passed today can no longer take a booking.
+          if (available && isPastSlot(date, time)) return;
           setSlot({
             court,
             time,
@@ -173,8 +175,8 @@ export function Calendar() {
               (booking) =>
                 booking.courtId === court.id && booking.time === time,
             ),
-          })
-        }
+          });
+        }}
       />
       {slot && (
         <Modal

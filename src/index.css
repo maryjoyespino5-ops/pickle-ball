@@ -1011,6 +1011,21 @@ select {
 .time-slot.booked:hover {
   background: #f6d3c6;
 }
+
+/* Past slots: free hours that already started today. Greyed out everywhere
+   the slot grid is rendered; they can never be booked (the DB rejects them
+   too). Placed after .booked so a taken slot keeps its orange BOOKED look. */
+.time-slot.past {
+  background: #eff1ec;
+  border-color: transparent;
+  color: #99a29a;
+  cursor: not-allowed;
+}
+.time-slot.past small {
+  color: #a7b0a8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
 .time-slot.selected,
 .time-slot:not(:disabled):hover {
   background: var(--coral);

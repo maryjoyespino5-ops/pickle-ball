@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { COURT_HOURS } from "../lib/constants";
 import { facilityService, buildCourtHours } from "./facilityService";
+import { isPastSlot } from "../utils/dateUtils";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
@@ -66,12 +67,20 @@ export async function getAvailability(date) {
     ),
   );
 
+  // Hours that already passed today are never bookable: mark them up front so
+  // every calendar (customer booking, public availability, admin planner)
+  // shows the same greyed-out PAST state. The database enforces the same rule
+  // on insert/update (see supabase/migrations/0013_reject_past_bookings.sql).
   return (courtRows || []).map((court) => ({
     ...toAppCourt(court),
-    slots: hours.map((time) => ({
-      time,
-      available: !busy.has(`${court.id}:${time}`),
-    })),
+    slots: hours.map((time) => {
+      const past = isPastSlot(date, time);
+      return {
+        time,
+        available: !past && !busy.has(`${court.id}:${time}`),
+        past,
+      };
+    }),
   }));
 }
 

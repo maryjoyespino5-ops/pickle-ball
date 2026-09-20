@@ -9,7 +9,7 @@ import { bookingService } from "../../services/bookingService";
 import { courtService } from "../../services/courtService";
 import { facilityService, buildCourtHours } from "../../services/facilityService";
 import { debounce } from "../../utils/debounce";
-import { formatTime12, todayISO } from "../../utils/dateUtils";
+import { formatTime12, todayISO, upcomingHours } from "../../utils/dateUtils";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
 
 const PAGE_SIZE = 10;
@@ -40,6 +40,19 @@ export function Bookings() {
   const [actionError, setActionError] = useState("");
   useAutoDismiss(feedback, () => setFeedback(""));
   const requestId = useMemo(() => ({ current: 0 }), []);
+
+  // Past hours are removed for today's date so a booking can never be
+  // rescheduled into a time that has already passed (the database rejects it
+  // too — see supabase/migrations/0013_reject_past_bookings.sql). If every
+  // hour for the chosen date has passed, fall back to the full list; the
+  // friendly "already passed" error still blocks the save.
+  const rescheduleTimeOptions = useMemo(() => {
+    const base = hours.length
+      ? hours
+      : ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"];
+    const upcoming = upcomingHours(base, reschedule.date);
+    return upcoming.length > 0 ? upcoming : base;
+  }, [hours, reschedule.date]);
 
   const fetchBookings = async (activeFilters) => {
     const myRequest = (requestId.current += 1);
@@ -311,10 +324,7 @@ export function Bookings() {
                 onChange={(event) =>
                   setReschedule({ ...reschedule, time: event.target.value })
                 }>
-                {(hours.length
-                  ? hours
-                  : ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"]
-                ).map((time) => (
+                {rescheduleTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {formatTime12(time)}
                   </option>

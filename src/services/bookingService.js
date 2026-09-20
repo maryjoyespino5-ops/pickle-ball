@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { BOOKING_STATUSES } from "../lib/constants";
+import { isPastSlot } from "../utils/dateUtils";
 
 function assertSupabase() {
   if (!isSupabaseConfigured || !supabase) {
@@ -30,6 +31,21 @@ function friendlyBookingError(error) {
     return new Error("That court is already booked for this time.");
   }
   return error;
+}
+
+/**
+ * Mirror of the database rule (0013_reject_past_bookings.sql): a booking can
+ * never be created or moved into a date/time that has already passed. The
+ * browser clock is used so the friendly message appears instantly and matches
+ * the timezone the booking wall-clock was made in.
+ */
+function assertFutureSlot({ date, time }) {
+  if (!date || !time) return;
+  if (isPastSlot(date, time)) {
+    throw new Error(
+      "That date and time has already passed. Please choose an upcoming slot.",
+    );
+  }
 }
 
 /** Map a bookings row (with joined court name) into the shape the UI uses. */
@@ -87,6 +103,7 @@ export async function createBooking({ courtId, date, time, duration = 1 }) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("You must be signed in to book a court.");
+  assertFutureSlot({ date, time });
 
   const { data, error } = await supabase
     .from("bookings")
@@ -266,8 +283,11 @@ export async function updateBooking(id, changes) {
   if (changes.paymentStatus) payload.payment_status = changes.paymentStatus;
   if (changes.paddleId !== undefined) payload.paddle_id = changes.paddleId || null;
   if (changes.courtId) payload.court_id = await resolveCourtId(changes.courtId);
-  if (changes.date) payload.booking_date = changes.date;
-  if (changes.time) payload.start_time = changes.time;
+  if (changes.date || changes.time) {
+    assertFutureSlot({ date: changes.date, time: changes.time });
+    if (changes.date) payload.booking_date = changes.date;
+    if (changes.time) payload.start_time = changes.time;
+  }
 
   if (Object.keys(payload).length === 0) {
     const existing = await getAdminBookingRow(id);
@@ -299,6 +319,7 @@ export async function createAdminBooking({
 }) {
   assertSupabase();
   const resolvedCourtId = await resolveCourtId(courtId);
+  assertFutureSlot({ date, time });
   await assertNoOverlap({ courtId: resolvedCourtId, date, time, duration });
   const { data, error } = await supabase
     .from("bookings")
