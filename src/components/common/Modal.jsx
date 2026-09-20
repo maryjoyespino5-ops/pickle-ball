@@ -1,30 +1,57 @@
 import { useEffect, useRef } from "react";
 
+// Real fields are matched first so opening a form dialog puts the caret in the
+// first input; the dialog's close button leads the DOM, so it used to win.
+const FIELD_SELECTOR = [
+  'input:not([disabled]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"])',
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+].join(", ");
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
 export function Modal({ children, onClose, title, labelledBy }) {
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  // Every caller passes an inline `onClose` arrow, so the prop identity changes
+  // on each render. Reading it through a ref keeps the setup effect below
+  // mount-only: depending on `onClose` re-ran it on every keystroke (typing
+  // updates state, the page re-renders, a new arrow arrives) and focus jumped
+  // to the close "x" button after a single character.
+  const onCloseRef = useRef(onClose);
   const titleId = labelledBy || "modal-title";
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const node = dialogRef.current;
     previousFocusRef.current = document.activeElement;
-    const focusable = node?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    (focusable || node?.querySelector(".modal-close"))?.focus?.();
+    const focusTarget =
+      node?.querySelector(FIELD_SELECTOR) ||
+      node?.querySelector(FOCUSABLE_SELECTOR) ||
+      node;
+    focusTarget?.focus?.();
 
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
       if (event.key !== "Tab" || !node) return;
-      const items = [...node.querySelectorAll(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      )].filter((el) => el.offsetParent !== null);
+      const items = [...node.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
+        (el) => el.offsetParent !== null,
+      );
       if (items.length === 0) return;
       const first = items[0];
       const last = items[items.length - 1];
@@ -42,7 +69,8 @@ export function Modal({ children, onClose, title, labelledBy }) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [onClose]);
+    // Mount-only on purpose: re-running this would steal focus mid-typing.
+  }, []);
 
   // Restore keyboard focus to the trigger when the dialog unmounts (B29).
   useEffect(() => {
