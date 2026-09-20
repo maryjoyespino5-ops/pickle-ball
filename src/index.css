@@ -2342,23 +2342,19 @@ select {
   margin-top: 22px;
 }
 .admin-calendar-grid {
+  /* Track sizes live in custom properties so the responsive breakpoints below
+     can still resize them while the column *count* is set inline from the
+     courts actually on screen (CalendarView). Arriving from Courts ("View
+     availability") filters to a single court (?court=<id>), which used to
+     leave a phantom empty column because the template hardcoded two. */
+  --calendar-time-col: 100px;
+  --calendar-court-col: minmax(180px, 1fr);
   background: #fff;
   border: 1px solid #e0e8e1;
   display: grid;
+  /* Fallback for the two-court default if the inline style is ever missing. */
   grid-template-columns: 100px repeat(2, minmax(180px, 1fr));
   overflow: hidden;
-}
-/* The grid adapts to how many courts are displayed: arriving from Courts
-   ("View availability") filters to a single court (?court=<id>), which used
-   to leave a phantom empty column because the template hardcoded two. */
-.admin-calendar-grid[data-court-count="1"] {
-  grid-template-columns: 100px minmax(180px, 1fr);
-}
-.admin-calendar-grid[data-court-count="3"] {
-  grid-template-columns: 100px repeat(3, minmax(180px, 1fr));
-}
-.admin-calendar-grid[data-court-count="4"] {
-  grid-template-columns: 100px repeat(4, minmax(180px, 1fr));
 }
 .calendar-corner,
 .calendar-court-head {
@@ -2923,17 +2919,9 @@ select {
     grid-column: auto;
   }
   .admin-calendar-grid {
-    grid-template-columns: 62px repeat(2, minmax(110px, 1fr));
+    --calendar-time-col: 62px;
+    --calendar-court-col: minmax(110px, 1fr);
     overflow-x: auto;
-  }
-  .admin-calendar-grid[data-court-count="1"] {
-    grid-template-columns: 62px minmax(110px, 1fr);
-  }
-  .admin-calendar-grid[data-court-count="3"] {
-    grid-template-columns: 62px repeat(3, minmax(110px, 1fr));
-  }
-  .admin-calendar-grid[data-court-count="4"] {
-    grid-template-columns: 62px repeat(4, minmax(110px, 1fr));
   }
   .calendar-corner,
   .calendar-court-head,
@@ -3104,17 +3092,9 @@ select {
 /* Roomier, touch-friendly calendar grid on phones. */
 @media (max-width: 640px) {
   .admin-calendar-grid {
-    grid-template-columns: 52px repeat(2, minmax(140px, 1fr));
+    --calendar-time-col: 52px;
+    --calendar-court-col: minmax(140px, 1fr);
     overflow-x: auto;
-  }
-  .admin-calendar-grid[data-court-count="1"] {
-    grid-template-columns: 52px minmax(140px, 1fr);
-  }
-  .admin-calendar-grid[data-court-count="3"] {
-    grid-template-columns: 52px repeat(3, minmax(140px, 1fr));
-  }
-  .admin-calendar-grid[data-court-count="4"] {
-    grid-template-columns: 52px repeat(4, minmax(140px, 1fr));
   }
   .calendar-corner,
   .calendar-court-head,

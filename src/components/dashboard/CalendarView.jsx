@@ -14,8 +14,16 @@ function slotTimes(courts, facility) {
 
 export function CalendarView({ courts, facility, onSlotClick }) {
   const times = slotTimes(courts, facility);
+  // Column count follows the courts actually shown, so filtering to a single
+  // court (Courts > "View availability") no longer leaves a phantom empty
+  // column. Track sizes stay in CSS so the responsive breakpoints keep working.
+  const courtColumns = Math.max(courts.length, 1);
   return (
-    <div className="admin-calendar-grid" data-court-count={courts.length}>
+    <div
+      className="admin-calendar-grid"
+      style={{
+        gridTemplateColumns: `var(--calendar-time-col) repeat(${courtColumns}, var(--calendar-court-col))`,
+      }}>
       <div className="calendar-corner">TIME</div>
       {courts.map((court) => (
         <div className="calendar-court-head" key={court.id}>
