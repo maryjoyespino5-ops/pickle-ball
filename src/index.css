@@ -2348,6 +2348,18 @@ select {
   grid-template-columns: 100px repeat(2, minmax(180px, 1fr));
   overflow: hidden;
 }
+/* The grid adapts to how many courts are displayed: arriving from Courts
+   ("View availability") filters to a single court (?court=<id>), which used
+   to leave a phantom empty column because the template hardcoded two. */
+.admin-calendar-grid[data-court-count="1"] {
+  grid-template-columns: 100px minmax(180px, 1fr);
+}
+.admin-calendar-grid[data-court-count="3"] {
+  grid-template-columns: 100px repeat(3, minmax(180px, 1fr));
+}
+.admin-calendar-grid[data-court-count="4"] {
+  grid-template-columns: 100px repeat(4, minmax(180px, 1fr));
+}
 .calendar-corner,
 .calendar-court-head {
   background: #edf4ee;
@@ -2395,6 +2407,22 @@ select {
 }
 .calendar-legend span:last-child {
   margin-left: auto;
+}
+/* Single-court mode (arriving via "View availability" from Courts). */
+.calendar-filter-note {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e0e8e1;
+  border-radius: 10px;
+  color: #6c887d;
+  display: flex;
+  font-size: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+}
+.calendar-filter-note strong {
+  color: #1f3934;
 }
 .modal-form {
   box-shadow: none;
@@ -2898,6 +2926,15 @@ select {
     grid-template-columns: 62px repeat(2, minmax(110px, 1fr));
     overflow-x: auto;
   }
+  .admin-calendar-grid[data-court-count="1"] {
+    grid-template-columns: 62px minmax(110px, 1fr);
+  }
+  .admin-calendar-grid[data-court-count="3"] {
+    grid-template-columns: 62px repeat(3, minmax(110px, 1fr));
+  }
+  .admin-calendar-grid[data-court-count="4"] {
+    grid-template-columns: 62px repeat(4, minmax(110px, 1fr));
+  }
   .calendar-corner,
   .calendar-court-head,
   .calendar-row > strong {
@@ -3069,6 +3106,15 @@ select {
   .admin-calendar-grid {
     grid-template-columns: 52px repeat(2, minmax(140px, 1fr));
     overflow-x: auto;
+  }
+  .admin-calendar-grid[data-court-count="1"] {
+    grid-template-columns: 52px minmax(140px, 1fr);
+  }
+  .admin-calendar-grid[data-court-count="3"] {
+    grid-template-columns: 52px repeat(3, minmax(140px, 1fr));
+  }
+  .admin-calendar-grid[data-court-count="4"] {
+    grid-template-columns: 52px repeat(4, minmax(140px, 1fr));
   }
   .calendar-corner,
   .calendar-court-head,

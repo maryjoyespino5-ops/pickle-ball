@@ -15,7 +15,7 @@ function slotTimes(courts, facility) {
 export function CalendarView({ courts, facility, onSlotClick }) {
   const times = slotTimes(courts, facility);
   return (
-    <div className="admin-calendar-grid">
+    <div className="admin-calendar-grid" data-court-count={courts.length}>
       <div className="calendar-corner">TIME</div>
       {courts.map((court) => (
         <div className="calendar-court-head" key={court.id}>

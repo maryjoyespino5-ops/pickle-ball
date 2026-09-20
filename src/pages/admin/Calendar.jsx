@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CalendarView } from "../../components/dashboard/CalendarView";
 import { Modal } from "../../components/common/Modal";
 import { BookingDetails } from "../../components/booking/BookingDetails";
@@ -12,6 +12,7 @@ import { formatTime12, isPastSlot } from "../../utils/dateUtils";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 export function Calendar() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const requestedCourt = searchParams.get("court") || "";
   const todayIso = useMemo(() => {
     const now = new Date();
@@ -31,6 +32,7 @@ export function Calendar() {
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [facility, setFacility] = useState(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const load = async () => {
     setLoadError("");
     try {
@@ -51,6 +53,7 @@ export function Calendar() {
     } catch (loadErr) {
       setLoadError(loadErr.message || "Could not load the calendar. Try again.");
     }
+    setHasLoaded(true);
   };
   useEffect(() => {
     // Ignore the moment a cleared date input ("") while the admin picks.
@@ -61,6 +64,8 @@ export function Calendar() {
   // Realtime: a customer booking elsewhere instantly flips this slot to BOOKED.
   useRealtimeBookings(load, Boolean(date));
   const maxDuration = Number(facility?.maxDuration) || 2;
+  /** Clear the ?court=<id> filter coming from the Courts page. */
+  const showAllCourts = () => navigate("/admin/calendar");
   /**
    * How many consecutive open hours start at `time` on this court? A
    * multi-hour booking must span open hours — the database rejects overlaps,
@@ -159,6 +164,14 @@ export function Calendar() {
           Click a booked slot to review its details · past times are view-only
         </span>
       </div>
+      {requestedCourt && courts.length > 0 && (
+        <div className="calendar-filter-note">
+          Showing <strong>{courts[0].name}</strong> only.
+          <button className="text-button" type="button" onClick={showAllCourts}>
+            Show all courts
+          </button>
+        </div>
+      )}
       {loadError && (
         <div className="admin-load-row">
           <ErrorMessage message={loadError} />
@@ -167,23 +180,35 @@ export function Calendar() {
           </button>
         </div>
       )}
-      <CalendarView
-        courts={courts}
-        facility={facility}
-        onSlotClick={(court, time, available) => {
-          // Hours that already passed today can no longer take a booking.
-          if (available && isPastSlot(date, time)) return;
-          setSlot({
-            court,
-            time,
-            available,
-            booking: bookings.find(
-              (booking) =>
-                booking.courtId === court.id && booking.time === time,
-            ),
-          });
-        }}
-      />
+      {requestedCourt && hasLoaded && courts.length === 0 ? (
+        <div className="admin-load-row">
+          <ErrorMessage message="This court is not currently bookable (disabled or under maintenance), so its calendar is unavailable." />
+          <button
+            className="button outline"
+            type="button"
+            onClick={showAllCourts}>
+            Show all courts
+          </button>
+        </div>
+      ) : courts.length > 0 ? (
+        <CalendarView
+          courts={courts}
+          facility={facility}
+          onSlotClick={(court, time, available) => {
+            // Hours that already passed today can no longer take a booking.
+            if (available && isPastSlot(date, time)) return;
+            setSlot({
+              court,
+              time,
+              available,
+              booking: bookings.find(
+                (booking) =>
+                  booking.courtId === court.id && booking.time === time,
+              ),
+            });
+          }}
+        />
+      ) : null}
       {slot && (
         <Modal
           title={slot.available ? "Create manual booking" : "View booking"}
