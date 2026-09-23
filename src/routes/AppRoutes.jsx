@@ -9,6 +9,8 @@ import { Availability } from "../pages/public/Availability";
 import { Pricing } from "../pages/public/Pricing";
 import { Contact } from "../pages/public/Contact";
 import { PaddleStatus } from "../pages/public/PaddleStatus";
+import { GuestBooking } from "../pages/public/GuestBooking";
+import { ManageBooking } from "../pages/public/ManageBooking";
 import { Login } from "../pages/auth/Login";
 import { Register } from "../pages/auth/Register";
 import { ForgotPassword } from "../pages/auth/ForgotPassword";
@@ -79,6 +81,11 @@ export function AppRoutes() {
         <Route path="/availability" element={<Availability />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/contact" element={<Contact />} />
+        {/* Guest booking (no login) — the landing page embeds the same form. */}
+        <Route path="/book-court" element={<GuestBooking />} />
+        {/* View / cancel a guest booking: secure link (QR) or reference + mobile. */}
+        <Route path="/booking" element={<ManageBooking />} />
+        <Route path="/booking/:reference" element={<ManageBooking />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

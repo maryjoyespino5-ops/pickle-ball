@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { Button } from "../../components/common/Button";
 import { CourtCard } from "../../components/courts/CourtCard";
+import { GuestBooking } from "./GuestBooking";
 import { courtService } from "../../services/courtService";
 import { facilityService } from "../../services/facilityService";
 import { useCourts } from "../../hooks/useCourts";
@@ -68,7 +69,7 @@ export function Home() {
             what you love.
           </p>
           <div className="hero-actions">
-            <Button to="/book">
+            <Button to="/#book">
               Book a court <span aria-hidden="true">-&gt;</span>
             </Button>
             <Link className="text-link" to="/availability">
@@ -80,6 +81,9 @@ export function Home() {
           <HeroShowcase />
         </div>
       </section>
+      {/* Guest booking straight from the landing page — no account needed.
+          The same component powers the standalone /book-court page. */}
+      <GuestBooking embedded />
       <section className="intro-section reveal">
         <div>
           <span className="section-index">01 / THE CLUB</span>

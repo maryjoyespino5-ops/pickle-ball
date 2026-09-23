@@ -3613,3 +3613,267 @@ select {
     font-size: 40px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Guest booking (public, no account):
+ *   * the landing-page "Book a Court" section + the /book-court page
+ *   * the public booking page (/booking/:reference) with its lookup form
+ * ------------------------------------------------------------------------- */
+
+.guest-booking {
+  margin: 0 auto 120px;
+  max-width: 1140px;
+  padding: 0 35px;
+}
+.guest-booking-page {
+  padding-bottom: 40px;
+}
+.guest-booking-page .guest-booking {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+}
+.guest-booking-heading {
+  max-width: 560px;
+}
+.guest-booking-heading h2 {
+  font-family: "Space Grotesk";
+  font-size: clamp(32px, 4vw, 53px);
+  letter-spacing: -2px;
+  line-height: 1;
+  margin: 16px 0;
+}
+.guest-booking-heading h2 em {
+  color: var(--coral);
+  font-style: normal;
+}
+.guest-booking-heading p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 470px;
+}
+.guest-booking .book-layout,
+.guest-booking .guest-booking-confirmation,
+.guest-booking .guest-booking-note {
+  margin-top: 45px;
+}
+.guest-booking-note {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 26px 28px;
+}
+.guest-booking-note p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 8px 0 0;
+  max-width: 480px;
+}
+.guest-booking-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+}
+.guest-booking-confirmation {
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
+  padding: 34px;
+}
+.confirmation-copy h3 {
+  font-family: "Space Grotesk";
+  font-size: 34px;
+  letter-spacing: -1px;
+  margin: 12px 0 10px;
+}
+.confirmation-copy > p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0 0 22px;
+  max-width: 490px;
+}
+.booking-reference {
+  background: var(--mint);
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 16px 18px;
+}
+.booking-reference small {
+  color: #518263;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.booking-reference strong {
+  font-family: "Space Grotesk";
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+.confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.create-account-cta {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-between;
+  margin-top: 26px;
+  padding-top: 22px;
+}
+
+/* Guest vs registered-account badge (admin bookings table + booking details) */
+.customer-cell {
+  display: grid;
+  gap: 4px;
+}
+.customer-name {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.booking-source {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+.booking-source.guest {
+  background: #fbefcf;
+  color: #a87923;
+}
+.booking-source.account {
+  background: #dceee2;
+  color: #2e7d4f;
+}
+
+/* Public booking page (/booking) — open, view or cancel a guest booking */
+.manage-booking-page {
+  padding-bottom: 60px;
+}
+.manage-booking-card {
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 30px;
+}
+.manage-booking-head {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 18px;
+}
+.manage-booking-reference {
+  display: block;
+  font-family: "Space Grotesk";
+  font-size: 32px;
+  letter-spacing: -1.2px;
+  margin-top: 6px;
+}
+.manage-booking-card .success-message,
+.manage-booking-card .error-message {
+  margin-top: 20px;
+}
+.manage-booking-card .details-actions {
+  margin-top: 24px;
+}
+.manage-booking-lookup {
+  align-items: start;
+  display: grid;
+  gap: 50px;
+  grid-template-columns: 1fr 1fr;
+}
+.manage-booking-lookup h2 {
+  font-family: "Space Grotesk";
+  font-size: clamp(26px, 3vw, 36px);
+  letter-spacing: -1px;
+  margin: 14px 0 10px;
+}
+.manage-booking-lookup p {
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 390px;
+}
+.manage-booking-lookup .form-card .text-button {
+  justify-self: start;
+}
+.create-account-cta p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 6px 0 0;
+  max-width: 430px;
+}
+.booking-qr {
+  align-items: center;
+  background: #f4f7f2;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+}
+.booking-qr-canvas {
+  background: #fff;
+  border-radius: 10px;
+}
+.booking-qr figcaption {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+.booking-qr small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .guest-booking-confirmation {
+    grid-template-columns: 1fr;
+  }
+  .manage-booking-lookup {
+    gap: 30px;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .guest-booking {
+    margin-bottom: 70px;
+    padding: 0 20px;
+  }
+  .guest-booking-confirmation {
+    gap: 26px;
+    padding: 22px;
+  }
+  .manage-booking-card {
+    padding: 22px;
+  }
+  .booking-reference strong,
+  .manage-booking-reference {
+    font-size: 26px;
+  }
+}
+

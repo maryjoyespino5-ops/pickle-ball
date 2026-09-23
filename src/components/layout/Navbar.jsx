@@ -43,7 +43,8 @@ export function Navbar() {
             <Link className="header-login" to="/login">
               Log in
             </Link>
-            <Button to="/book">
+            {/* Guests book straight on the landing page — no account needed. */}
+            <Button to="/#book">
               Book a court <span aria-hidden="true">-&gt;</span>
             </Button>
           </>

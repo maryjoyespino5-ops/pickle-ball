@@ -36,15 +36,22 @@ declare
   admin_uuid  uuid := 'a51ca1ad-0000-4000-8000-000000000001';
   admin_email text := 'alicarayad@admin.com';
   admin_name  text := 'Alicayard Admin';
+  v_user_id   uuid;
 begin
+  -- Resolve the admin account first: the project may already have this email
+  -- under a DIFFERENT id (e.g. created via a normal signup or an earlier seed),
+  -- in which case admin_uuid is wrong and pinning it would collide with the
+  -- existing auth.identities row on (provider_id, provider).
+  select u.id into v_user_id
+  from auth.users u
+  where lower(u.email) = admin_email
+  limit 1;
+
   -- ---------------------------------------------------------------------------
   -- 1) Auth user + email identity (skipped if the email already exists)
   -- ---------------------------------------------------------------------------
-  if not exists (
-    select 1 from auth.users where lower(email) = admin_email
-  ) then
+  if v_user_id is null then
     insert into auth.users (
-      instance_id,
       id,
       aud,
       role,
@@ -60,7 +67,6 @@ begin
       email_change,
       email_change_token_new
     ) values (
-      '00000000-0000-0000-0000-000000000000',
       admin_uuid,
       'authenticated',
       'authenticated',
@@ -76,30 +82,49 @@ begin
       '',
       ''
     );
+    v_user_id := admin_uuid;
+  end if;
 
-    -- Email identity so the account behaves like a normal signup.
-    -- (identities.id is a text column on current Supabase projects)
-    insert into auth.identities (
-      id,
-      user_id,
-      provider_id,
-      identity_data,
-      last_sign_in_at,
-      created_at,
-      updated_at
-    ) values (
-      admin_uuid::text,
-      admin_uuid,
-      'email',
+  -- Email identity so the account behaves like a normal signup.
+  -- Supabase stores an email identity as provider='email' with
+  -- provider_id = <user id>, and the uniqueness is on (provider_id, provider).
+  -- The account may already have one, and the admin email may already exist
+  -- under a DIFFERENT user id, so both are checked before inserting.
+  --
+  -- auth.identities.id has been BOTH uuid and text across Supabase versions, so
+  -- build the row with a parameter typed from the column itself rather than
+  -- hard-coding a cast that only suits one schema version.
+  if not exists (
+    select 1
+    from auth.identities i
+    where i.provider = 'email'
+      and (
+        i.provider_id = v_user_id::text
+        or i.user_id = v_user_id
+        or coalesce(i.identity_data ->> 'email', '') = admin_email
+      )
+  ) then
+    execute format(
+      $fmt$
+        insert into auth.identities (
+          id, user_id, provider_id, provider, identity_data,
+          last_sign_in_at, created_at, updated_at
+        ) values ($1::%1$s, $2, $2::text, 'email', $3, now(), now(), now())
+      $fmt$,
+      (select format_type(a.atttypid, a.atttypmod)
+         from pg_attribute a
+        where a.attrelid = 'auth.identities'::regclass
+          and a.attname = 'id'
+          and not a.attisdropped)
+    )
+    using
+      v_user_id::text,
+      v_user_id,
       jsonb_build_object(
-        'sub', admin_uuid::text,
+        'sub', v_user_id::text,
         'email', admin_email,
         'email_verified', true
-      ),
-      now(),
-      now(),
-      now()
-    );
+      );
   end if;
 
   -- ---------------------------------------------------------------------------
@@ -111,13 +136,19 @@ begin
 
   update public.profiles
      set role = 'admin'
-   where lower(email) = admin_email;
+   where id = v_user_id;
 
-  if not found then
+  -- Do not rely on FOUND here: earlier statements in this block (the identity
+  -- guard / insert) reset it. Check the row exists outright, and make the
+  -- fallback conflict-safe on the primary key.
+  if not exists (
+    select 1 from public.profiles p where p.id = v_user_id
+  ) then
     -- Fallback: profile row missing (e.g. trigger was absent) — insert directly.
     -- Inserts are not blocked by prevent_role_change (it only guards updates).
     insert into public.profiles (id, full_name, email, role)
-    values (admin_uuid, admin_name, admin_email, 'admin');
+    values (v_user_id, admin_name, admin_email, 'admin')
+    on conflict (id) do nothing;
   end if;
 
   alter table public.profiles enable trigger profiles_prevent_role_change;

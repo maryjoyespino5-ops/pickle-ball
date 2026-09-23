@@ -13,6 +13,8 @@ export function Footer() {
         <Link to="/courts">Courts</Link>
         <Link to="/pricing">Pricing</Link>
         <Link to="/contact">Contact</Link>
+        <Link to="/book-court">Book a court</Link>
+        <Link to="/booking">My booking</Link>
       </div>
       <small>© 2026 Alicayard Pickle Ball</small>
     </footer>

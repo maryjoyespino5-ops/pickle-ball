@@ -13,6 +13,10 @@ export function BookingDetails({ booking, onAction, onReschedule, readOnly = fal
           <strong>{booking.customer}</strong>
           <span>{booking.email}</span>
           <span>{booking.phone}</span>
+          <span
+            className={`booking-source ${booking.isGuest ? "guest" : "account"}`}>
+            {booking.isGuest ? "Guest booking (no account)" : "Registered account"}
+          </span>
         </div>
         <div>
           <small>Court</small>

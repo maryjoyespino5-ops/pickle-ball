@@ -26,6 +26,8 @@ export function Bookings() {
     court: "all",
     status: "all",
     paymentStatus: "all",
+    // "all" | "account" | "guest" — registered accounts vs no-account guests.
+    source: "all",
   });
   const [bookings, setBookings] = useState([]);
   const [courts, setCourts] = useState([]);
@@ -256,6 +258,13 @@ export function Bookings() {
           <option value="pending">Pending</option>
           <option value="paid">Paid</option>
           <option value="refunded">Refunded</option>
+        </select>
+        <select
+          value={filters.source}
+          onChange={(event) => setFilter("source", event.target.value)}>
+          <option value="all">All customers</option>
+          <option value="account">Registered accounts</option>
+          <option value="guest">Guest bookings</option>
         </select>
       </div>
       {bookings.length ? (

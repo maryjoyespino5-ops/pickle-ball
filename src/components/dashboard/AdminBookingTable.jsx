@@ -33,8 +33,16 @@ export function AdminBookingTable({
                 <strong>{booking.id}</strong>
               </td>
               <td data-label="Customer">
-                {booking.customer}
-                <small>{booking.email}</small>
+                <span className="customer-cell">
+                  <span className="customer-name">
+                    {booking.customer}
+                    <span
+                      className={`booking-source ${booking.isGuest ? "guest" : "account"}`}>
+                      {booking.isGuest ? "Guest" : "Account"}
+                    </span>
+                  </span>
+                  <small>{booking.email || booking.phone || "No contact on file"}</small>
+                </span>
               </td>
               <td data-label="Court">{booking.courtName}</td>
               <td data-label="Date / time">

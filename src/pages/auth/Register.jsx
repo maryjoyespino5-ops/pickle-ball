@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
@@ -6,10 +6,15 @@ import { useAuth } from "../../hooks/useAuth";
 export function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Guests arrive here from a booking confirmation / booking page, with their
+  // details (and the page to return to) filled in already.
+  const nextParam = searchParams.get("next") || "";
+  const redirectTo = nextParam.startsWith("/") ? nextParam : "/dashboard";
   const [details, setDetails] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
+    fullName: searchParams.get("fullName") || "",
+    email: searchParams.get("email") || "",
+    phone: searchParams.get("phone") || "",
     password: "",
     confirmPassword: "",
   });
@@ -40,7 +45,7 @@ export function Register() {
       if (result?.requiresEmailConfirmation) {
         setConfirmationSent(true);
       } else {
-        navigate("/dashboard");
+        navigate(redirectTo);
       }
       setSubmitting(false);
     } catch (err) {
@@ -60,8 +65,16 @@ export function Register() {
         <p>
           {confirmationSent
             ? "Almost there. Check your inbox and click the link to confirm your email address."
-            : "Set up your profile and book your first hour on court."}
+            : nextParam
+              ? "Create your account and we will take you straight back to your booking — it will appear in your booking history."
+              : "Set up your profile and book your first hour on court."}
         </p>
+        {confirmationSent && nextParam && (
+          <p>
+            Once your email is confirmed, open your booking link again and use
+            “Link this booking to my account”.
+          </p>
+        )}
         {!confirmationSent && (
           <form className="form-card form-grid" onSubmit={submit}>
             <label className="span-two">

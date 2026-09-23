@@ -191,6 +191,10 @@ function toAdminBooking(row, profile) {
   return {
     id: row.booking_number,
     userId: row.user_id,
+    // Guest bookings come from the public booking flow and have no account:
+    // user_id is null and the guest's own details live on the row.
+    isGuest: !row.user_id,
+    source: row.user_id ? "account" : "guest",
     customer:
       row.customer_name ||
       profile?.full_name ||
@@ -265,10 +269,17 @@ export async function getAllBookings(filters = {}) {
   let result = (data || []).map((row) =>
     toAdminBooking(row, profiles[row.user_id]),
   );
+  // Guest vs registered-account bookings. `source` is derived from user_id, so
+  // it is filtered here (the same way search is).
+  if (filters.source && filters.source !== "all") {
+    result = result.filter((booking) =>
+      filters.source === "guest" ? booking.isGuest : !booking.isGuest,
+    );
+  }
   if (filters.search) {
     const term = filters.search.toLowerCase();
     result = result.filter((booking) =>
-      `${booking.id} ${booking.customer} ${booking.courtName}`
+      `${booking.id} ${booking.customer} ${booking.email} ${booking.phone} ${booking.courtName}`
         .toLowerCase()
         .includes(term),
     );
