@@ -290,6 +290,25 @@ h1 em {
   font-weight: 700;
   padding: 14px 20px;
 }
+.button:not(:disabled) {
+  cursor: pointer;
+}
+.button:not(:disabled):hover {
+  background: #0f2c27;
+  border-color: #0f2c27;
+}
+/* Without this the browser's default disabled treatment washed the button out
+   and it read as broken rather than "pick a slot first". */
+.button:disabled {
+  background: #e4e8e2;
+  border-color: #d9e1d8;
+  color: #93a49c;
+  cursor: not-allowed;
+}
+.button:focus-visible {
+  outline: 3px solid rgba(23, 61, 55, 0.35);
+  outline-offset: 2px;
+}
 .button.outline {
   background: transparent;
   color: #143b35;
@@ -928,7 +947,8 @@ body {
   padding-bottom: 22px;
 }
 .availability-toolbar label,
-.date-field {
+.date-field,
+.duration-field {
   color: var(--muted);
   display: grid;
   font-size: 11px;
@@ -936,6 +956,26 @@ body {
   gap: 8px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+/* The date + duration controls sit side by side above the court list. They are
+   two independent grid items, so a plain wrapper keeps them aligned with each
+   other while still collapsing to one column on phones. */
+.booking-controls {
+  align-items: end;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.booking-controls select,
+.booking-controls input {
+  font-size: 15px;
+  min-height: 48px;
+  width: 100%;
+}
+@media (max-width: 520px) {
+  .booking-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 input,
 textarea,
@@ -1135,15 +1175,24 @@ select {
 }
 .auth-page {
   display: grid;
-  grid-template-columns: 1fr 0.7fr;
+  gap: 60px;
+  grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
   margin: auto;
   max-width: 1100px;
   min-height: 670px;
   padding: 65px 35px;
 }
+/* Only the pages that actually render the art panel get two columns. Register,
+   Forgot password and Reset password have no art, so they use a single centred
+   column instead of leaving ~40% of the row empty. */
+.auth-page:not(:has(.auth-art)) {
+  grid-template-columns: minmax(0, 480px);
+  justify-content: center;
+}
 .auth-panel {
   align-self: center;
-  max-width: 480px;
+  min-width: 0;
+  width: 100%;
 }
 .auth-panel > p {
   color: var(--muted);
@@ -1199,9 +1248,65 @@ select {
 .form-grid {
   grid-template-columns: 1fr 1fr;
 }
+/* Grid items default to min-width: auto, which lets long content push a track
+   wider than the container and overflow the card. Pinning min-width to 0 keeps
+   both columns inside the padding. */
+.form-grid > * {
+  min-width: 0;
+}
 .form-grid .span-two,
 .form-grid .button {
   grid-column: 1 / -1;
+}
+.form-grid input,
+.form-grid select {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Auth forms (register / login / password) use full-size controls so the fields
+   read as a standard signup form rather than a compact inline filter. */
+.auth-panel .form-card {
+  gap: 20px;
+  padding: 32px;
+}
+.auth-panel .form-card label {
+  font-size: 12px;
+  gap: 9px;
+}
+/* One field per row: at this panel width a two-column split left the password
+   pair cramped at ~198px, which reads worse than a taller, even stack. */
+.auth-panel .form-card.form-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.auth-panel .form-card input {
+  font-size: 15px;
+  min-height: 48px;
+  padding: 13px 15px;
+  text-transform: none;
+}
+.auth-panel .form-card .button {
+  font-size: 14px;
+  justify-self: stretch;
+  margin-top: 6px;
+  padding: 15px 20px;
+  width: 100%;
+}
+.auth-panel .form-card .error-message {
+  font-size: 13px;
+}
+.auth-panel .auth-switch {
+  font-size: 13px;
+}
+
+@media (max-width: 560px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-panel .form-card {
+    padding: 24px;
+  }
 }
 .customer-shell {
   display: grid;
@@ -2316,30 +2421,88 @@ select {
   justify-content: center;
   padding: 20px;
   position: fixed;
-  z-index: 20;
+  /* Must sit above the sticky site header (z-index 40 in premium.css) or the
+     header paints over the dialog and hides its title. */
+  z-index: 100;
+  /* A short viewport (phone in landscape) must still be able to reach every
+     field, so the backdrop scrolls rather than clipping the dialog. */
+  overflow-y: auto;
 }
 .modal {
   background: #f7f9f5;
   max-height: 90vh;
   max-width: 700px;
-  overflow-y: auto;
+  /* flex column so the title stays pinned while only the body scrolls */
+  display: flex;
+  flex-direction: column;
   padding: 30px;
   position: relative;
   width: 100%;
+  margin: auto;
+}
+.modal > form,
+.modal > .form-card {
+  /* The scrollable region: long guest forms scroll here, the heading does not. */
+  overflow-y: auto;
+  min-height: 0;
 }
 .modal > h2 {
   font-family: "Space Grotesk";
   font-size: 23px;
   margin: 0 0 22px;
+  /* Never let the dialog's own scrollbar or close button hide the title. */
+  flex-shrink: 0;
+  padding-right: 56px;
+}
+/* The confirm-booking modal collects the guest's name and mobile number, so its
+   controls match the rest of the booking flow instead of the compact sizing
+   used by inline filters. */
+.modal .form-card {
+  gap: 20px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.modal .form-card label {
+  font-size: 12px;
+  gap: 9px;
+}
+.modal .form-card input,
+.modal .form-card select {
+  font-size: 15px;
+  min-height: 48px;
+  padding: 13px 15px;
+}
+.modal .form-card .guest-booking-hint {
+  font-size: 12px;
+}
+.modal .form-card .button {
+  justify-self: stretch;
+  margin-top: 6px;
+  padding: 15px 20px;
+  width: 100%;
 }
 .modal-close {
-  background: transparent;
-  border: 0;
+  align-items: center;
+  background: #f7f9f5;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   color: #668078;
-  font-size: 24px;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 22px;
+  height: 36px;
+  justify-content: center;
+  line-height: 1;
   position: absolute;
   right: 18px;
-  top: 14px;
+  top: 18px;
+  width: 36px;
+  z-index: 1;
+}
+.modal-close:hover {
+  background: #eef2ec;
+  color: var(--ink);
 }
 .booking-details {
   background: #fff;
@@ -3711,6 +3874,13 @@ select {
 .guest-booking .guest-booking-note {
   margin-top: 45px;
 }
+/* Standalone page (/book-court): the page intro above already provides the
+   spacing, so the first block inside carries no extra top margin. */
+.guest-booking-page .guest-booking > .book-layout,
+.guest-booking-page .guest-booking > .guest-booking-confirmation,
+.guest-booking-page .guest-booking > .guest-booking-note {
+  margin-top: 0;
+}
 .guest-booking-note {
   align-items: center;
   background: var(--panel);
@@ -3869,6 +4039,28 @@ select {
 }
 .manage-booking-lookup .form-card .text-button {
   justify-self: start;
+}
+/* The reference + mobile lookup is part of the guest booking journey, so its
+   controls match the rest of the flow (full-size, readable) rather than the
+   compact filter sizing used elsewhere. */
+.manage-booking-lookup .form-card {
+  gap: 20px;
+  padding: 30px;
+}
+.manage-booking-lookup .form-card label {
+  font-size: 12px;
+  gap: 9px;
+}
+.manage-booking-lookup .form-card input {
+  font-size: 15px;
+  min-height: 48px;
+  padding: 13px 15px;
+}
+.manage-booking-lookup .form-card .button {
+  justify-self: stretch;
+  margin-top: 4px;
+  padding: 15px 20px;
+  width: 100%;
 }
 .create-account-cta p {
   color: var(--muted);

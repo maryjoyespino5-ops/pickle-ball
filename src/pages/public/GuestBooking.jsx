@@ -70,7 +70,9 @@ export function GuestBooking({ embedded = false }) {
         const max = Number(facility.maxDuration) || 2;
         setMaxDuration(max);
         setDuration((current) =>
-          current && current <= max ? current : Number(facility.defaultDuration) || 1,
+          current && current <= max
+            ? current
+            : Number(facility.defaultDuration) || 1,
         );
       }
     } catch (err) {
@@ -92,7 +94,11 @@ export function GuestBooking({ embedded = false }) {
     if (!selected.courtId || !selected.time) return;
     const court = courts.find((item) => item.id === selected.courtId);
     const slot = court?.slots?.find((item) => item.time === selected.time);
-    if (!slot || !slot.available || !rangeFits(court, selected.time, duration)) {
+    if (
+      !slot ||
+      !slot.available ||
+      !rangeFits(court, selected.time, duration)
+    ) {
       setSelected({});
     }
   }, [courts, selected, duration]);
@@ -198,19 +204,24 @@ export function GuestBooking({ embedded = false }) {
 
   const section = (
     <>
-      <div className="guest-booking-heading">
-        <span className="eyebrow">BOOK A COURT</span>
-        <h2>
-          Pick your hour.
-          <br />
-          <em>Play today.</em>
-        </h2>
-        <p>
-          No account, no queue. Choose a date and an open hour, leave your name
-          and mobile number, and we generate your booking reference and QR code
-          straight away.
-        </p>
-      </div>
+      {/* The section heading belongs to the embedded landing-page block. The
+          standalone /book-court page already has its own page intro, so the
+          heading is skipped there to avoid showing two titles. */}
+      {embedded && (
+        <div className="guest-booking-heading">
+          <span className="eyebrow">BOOK A COURT</span>
+          <h2>
+            Pick your hour.
+            <br />
+            <em>Play today.</em>
+          </h2>
+          <p>
+            No account, no queue. Choose a date and an open hour, leave your
+            name and mobile number, and we generate your booking reference and
+            QR code straight away.
+          </p>
+        </div>
+      )}
 
       {user ? (
         <div className="guest-booking-note">
@@ -276,8 +287,8 @@ export function GuestBooking({ embedded = false }) {
               <div>
                 <strong>Want faster bookings next time?</strong>
                 <p>
-                  Create an account with the same details and this booking — plus
-                  everything you book next — lands in your booking history.
+                  Create an account with the same details and this booking —
+                  plus everything you book next — lands in your booking history.
                 </p>
               </div>
               <Link className="text-link" to={createAccountPath}>
@@ -294,7 +305,10 @@ export function GuestBooking({ embedded = false }) {
               className="booking-qr-canvas"
             />
             <figcaption>Scan to view or manage this booking</figcaption>
-            <button className="button outline" type="button" onClick={downloadQr}>
+            <button
+              className="button outline"
+              type="button"
+              onClick={downloadQr}>
               Download QR code
             </button>
             <small>
@@ -318,28 +332,32 @@ export function GuestBooking({ embedded = false }) {
           )}
           <div className="book-layout">
             <section className="booking-picker">
-              <label className="date-field">
-                Choose a date
-                <input
-                  type="date"
-                  min={todayISO()}
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              </label>
-              <label className="duration-field">
-                Duration
-                <select
-                  value={duration}
-                  onChange={(event) => setDuration(Number(event.target.value))}>
-                  {durationOptions.map((hours) => (
-                    <option key={hours} value={hours}>
-                      {hours} hour{hours > 1 ? "s" : ""} ·{" "}
-                      {formatCurrency(hourlyRate * hours)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="booking-controls">
+                <label className="date-field">
+                  Choose a date
+                  <input
+                    type="date"
+                    min={todayISO()}
+                    value={date}
+                    onChange={(event) => setDate(event.target.value)}
+                  />
+                </label>
+                <label className="duration-field">
+                  Duration
+                  <select
+                    value={duration}
+                    onChange={(event) =>
+                      setDuration(Number(event.target.value))
+                    }>
+                    {durationOptions.map((hours) => (
+                      <option key={hours} value={hours}>
+                        {hours} hour{hours > 1 ? "s" : ""} ·{" "}
+                        {formatCurrency(hourlyRate * hours)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <div className="booking-courts">
                 {courts.length === 0 && !loadError && (
                   <p className="loading-state">Loading open hours…</p>
@@ -403,7 +421,9 @@ export function GuestBooking({ embedded = false }) {
       )}
 
       {confirming && selectedCourt && selected.time && (
-        <Modal title="Confirm your booking" onClose={() => setConfirming(false)}>
+        <Modal
+          title="Confirm your booking"
+          onClose={() => setConfirming(false)}>
           <div className="form-card modal-form">
             <div className="summary-row">
               <span>Court</span>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 // Real fields are matched first so opening a form dialog puts the caret in the
 // first input; the dialog's close button leads the DOM, so it used to win.
@@ -79,7 +80,7 @@ export function Modal({ children, onClose, title, labelledBy }) {
     };
   }, []);
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       role="presentation"
@@ -99,7 +100,8 @@ export function Modal({ children, onClose, title, labelledBy }) {
         {title && <h2 id={titleId}>{title}</h2>}
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

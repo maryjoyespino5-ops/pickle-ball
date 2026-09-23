@@ -152,28 +152,30 @@ export function BookCourt() {
       )}
       <div className="book-layout">
         <section className="booking-picker">
-          <label className="date-field">
-            Choose a date
-            <input
-              type="date"
-              min={todayISO()}
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-          </label>
-          <label className="duration-field">
-            Duration
-            <select
-              value={duration}
-              onChange={(event) => setDuration(Number(event.target.value))}>
-              {durationOptions.map((hours) => (
-                <option key={hours} value={hours}>
-                  {hours} hour{hours > 1 ? "s" : ""} ·{" "}
-                  {formatCurrency(hourlyRate * hours)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="booking-controls">
+            <label className="date-field">
+              Choose a date
+              <input
+                type="date"
+                min={todayISO()}
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              />
+            </label>
+            <label className="duration-field">
+              Duration
+              <select
+                value={duration}
+                onChange={(event) => setDuration(Number(event.target.value))}>
+                {durationOptions.map((hours) => (
+                  <option key={hours} value={hours}>
+                    {hours} hour{hours > 1 ? "s" : ""} ·{" "}
+                    {formatCurrency(hourlyRate * hours)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <div className="booking-courts">
             {courts.map((court) => (
               <div
