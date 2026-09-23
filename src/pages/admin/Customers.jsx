@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { customerService } from "../../services/customerService";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { debounce } from "../../utils/debounce";
@@ -52,6 +53,7 @@ export function Customers() {
   };
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">CUSTOMER DIRECTORY</span>

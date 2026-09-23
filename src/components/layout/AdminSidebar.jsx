@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useSubscription } from "../../context/SubscriptionContext";
 import { Icon } from "../common/Icon";
 
 const groups = [
@@ -24,11 +25,12 @@ const groups = [
     label: "REPORTING",
     links: [["Reports", "/admin/reports", "reports"]],
   },
-  { label: "SYSTEM", links: [["Settings", "/admin/settings", "settings"]] },
+  { label: "SYSTEM", links: [["Settings", "/admin/settings", "settings"], ["Subscription", "/admin/subscription", "payments"]] },
 ];
 
 export function AdminSidebar() {
   const { logout } = useAuth();
+  const { isActive, subscription } = useSubscription();
   const navigate = useNavigate();
   const handleLogout = () => {
     logout();
@@ -65,6 +67,11 @@ export function AdminSidebar() {
         </span>{" "}
         Logout
       </button>
+      {!isActive && (
+        <NavLink to="/admin/subscription" className="subscription-expired-note">
+          License expired{subscription?.expiresAt ? ` since ${new Date(subscription.expiresAt).toLocaleDateString()}` : ""} — renew
+        </NavLink>
+      )}
     </aside>
   );
 }

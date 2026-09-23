@@ -8,6 +8,7 @@ export function AdminBookingTable({
   onComplete,
   onReschedule,
   busy = false,
+  readOnly = false,
 }) {
   return (
     <div className="table-wrap">
@@ -57,26 +58,26 @@ export function AdminBookingTable({
                   <button disabled={busy} onClick={() => onView(booking)}>
                     View
                   </button>
-                  {booking.status === "upcoming" && (
+                  {!readOnly && booking.status === "upcoming" && (
                     <button disabled={busy} onClick={() => onConfirm(booking)}>
                       Confirm
                     </button>
                   )}
-                  {booking.status === "confirmed" && (
+                  {!readOnly && booking.status === "confirmed" && (
                     <button
                       disabled={busy}
                       onClick={() => onComplete(booking)}>
                       Complete
                     </button>
                   )}
-                  {["upcoming", "confirmed"].includes(booking.status) && (
+                  {!readOnly && ["upcoming", "confirmed"].includes(booking.status) && (
                     <button
                       disabled={busy}
                       onClick={() => onReschedule(booking)}>
                       Reschedule
                     </button>
                   )}
-                  {booking.status !== "cancelled" && (
+                  {!readOnly && booking.status !== "cancelled" && (
                     <button disabled={busy} onClick={() => onCancel(booking)}>
                       Cancel
                     </button>

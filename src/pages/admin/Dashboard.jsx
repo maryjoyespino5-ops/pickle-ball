@@ -13,6 +13,9 @@ import { formatTime12, formatTimeRange12 } from "../../utils/dateUtils";
 
 import { useAuth } from "../../hooks/useAuth";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 
 function toIsoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -20,6 +23,7 @@ function toIsoDate(date) {
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { locked, refresh } = useSubscriptionLock();
   const firstName = (user?.fullName || "Alex").split(" ")[0];
   const hour = new Date().getHours();
   const greeting =
@@ -50,7 +54,7 @@ export function Dashboard() {
   // Realtime: new customer bookings appear on this dashboard without refresh.
   useRealtimeBookings(load);
   const update = async (action, booking = selected) => {
-    if (!booking) return;
+    if (!booking || locked) return;
     if (action === "cancelled") {
       setCancelTarget(booking);
       return;
@@ -67,13 +71,14 @@ export function Dashboard() {
       );
       setSelected(next);
     } catch (err) {
-      setActionError(err.message || "Could not update this booking.");
+      setActionError(subscriptionService.subscriptionErrorMessage(err, "Could not update this booking."));
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     } finally {
       setBusy(false);
     }
   };
   const confirmCancel = async () => {
-    if (!cancelTarget) return;
+    if (!cancelTarget || locked) return;
     setActionError("");
     setBusy(true);
     try {
@@ -85,7 +90,8 @@ export function Dashboard() {
       );
       setCancelTarget(null);
     } catch (err) {
-      setActionError(err.message || "Could not cancel this booking.");
+      setActionError(subscriptionService.subscriptionErrorMessage(err, "Could not cancel this booking."));
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     } finally {
       setBusy(false);
     }
@@ -102,6 +108,7 @@ export function Dashboard() {
   const courtBooking = (courtId) => active.find((item) => item.courtId === courtId);
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">
@@ -180,6 +187,7 @@ export function Dashboard() {
         <AdminBookingTable
           bookings={bookings}
           busy={busy}
+          readOnly={locked}
           onView={setSelected}
           onCancel={setCancelTarget}
           onConfirm={(booking) => update("confirmed", booking)}
@@ -227,6 +235,7 @@ export function Dashboard() {
           onClose={() => setSelected(null)}>
           <BookingDetails
             booking={selected}
+            readOnly={locked}
             onAction={update}
             onReschedule={() => navigate("/admin/bookings")}
           />

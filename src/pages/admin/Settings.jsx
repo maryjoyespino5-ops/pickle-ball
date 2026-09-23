@@ -4,6 +4,9 @@ import { settingsService } from "../../services/settingsService";
 import { facilityService } from "../../services/facilityService";
 import { authService } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 
 const emptySettings = {
   facilityName: "",
@@ -18,6 +21,7 @@ const emptySettings = {
 
 export function Settings() {
   const { user } = useAuth();
+  const { locked, refresh } = useSubscriptionLock();
   const [values, setValues] = useState({
     ...emptySettings,
     adminName: user?.fullName || "",
@@ -46,6 +50,11 @@ export function Settings() {
   };
   const save = async (event) => {
     event.preventDefault();
+    if (locked) {
+      setError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     if (
       !values.facilityName ||
       !values.address ||
@@ -91,7 +100,8 @@ export function Settings() {
       }
       setSaved(true);
     } catch (saveError) {
-      setError(saveError.message);
+      setError(subscriptionService.subscriptionErrorMessage(saveError, "Could not save settings."));
+      if (subscriptionService.isSubscriptionExpiredError(saveError)) refresh();
     } finally {
       setSaving(false);
     }
@@ -116,6 +126,7 @@ export function Settings() {
   };
   return (
     <form className="admin-page settings-page" onSubmit={save}>
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">WORKSPACE CONFIGURATION</span>

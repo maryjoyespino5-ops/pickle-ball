@@ -4,6 +4,7 @@ import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { useBookings } from "../../hooks/useBookings";
+import { subscriptionService } from "../../services/subscriptionService";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
 export function MyBookings() {
@@ -24,7 +25,12 @@ export function MyBookings() {
       await cancel(id);
       setNotice(true);
     } catch (err) {
-      setCancelError(err.message || "Could not cancel the booking.");
+      setCancelError(
+        subscriptionService.customerSubscriptionMessage(
+          err,
+          "Could not cancel the booking.",
+        ),
+      );
     }
   };
   return (

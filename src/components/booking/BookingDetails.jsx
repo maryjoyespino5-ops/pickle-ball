@@ -1,6 +1,6 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12 } from "../../utils/dateUtils";
-export function BookingDetails({ booking, onAction, onReschedule }) {
+export function BookingDetails({ booking, onAction, onReschedule, readOnly = false }) {
   return (
     <div className="booking-details">
       <div className="details-id">
@@ -37,29 +37,29 @@ export function BookingDetails({ booking, onAction, onReschedule }) {
         </div>
       </div>
       <div className="details-actions">
-        {booking.status === "upcoming" && (
+        {!readOnly && booking.status === "upcoming" && (
           <button className="button" onClick={() => onAction("confirmed")}>
             Confirm booking
           </button>
         )}
-        {booking.paymentStatus === "pending" && (
+        {!readOnly && booking.paymentStatus === "pending" && (
           <button className="button outline" onClick={() => onAction("paid")}>
             Mark paid
           </button>
         )}
-        {booking.status === "confirmed" && (
+        {!readOnly && booking.status === "confirmed" && (
           <button
             className="button outline"
             onClick={() => onAction("completed")}>
             Mark completed
           </button>
         )}
-        {booking.status !== "cancelled" && (
+        {!readOnly && booking.status !== "cancelled" && (
           <button className="text-button" onClick={() => onAction("cancelled")}>
             Cancel booking
           </button>
         )}
-        {["upcoming", "confirmed"].includes(booking.status) && (
+        {!readOnly && ["upcoming", "confirmed"].includes(booking.status) && (
           <button className="button outline" onClick={onReschedule}>
             Reschedule
           </button>

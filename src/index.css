@@ -2225,6 +2225,10 @@ select {
   background: #dceee2;
   color: #428255;
 }
+.status-expired {
+  background: #f8dcd3;
+  color: #b0472c;
+}
 .status-pending {
   background: #fbefcf;
   color: #a87923;
@@ -2597,6 +2601,111 @@ select {
 }
 .report-section {
   margin-bottom: 35px;
+}
+.subscription-section {
+  background: #fff;
+  border: 1px solid #e2e9e3;
+  margin-bottom: 20px;
+  padding: 24px;
+}
+.subscription-section .admin-section-heading {
+  margin-bottom: 6px;
+}
+.renewal-banner {
+  align-items: center;
+  background: #153d36;
+  color: #f4f1e9;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 26px 28px;
+}
+.renewal-banner h3 {
+  color: #f3cc63;
+  font-family: "Space Grotesk";
+  font-size: 22px;
+  margin: 8px 0;
+}
+.renewal-banner p {
+  color: #d5e5dc;
+  font-size: 13px;
+  margin: 0;
+  max-width: 640px;
+}
+.renewal-fee {
+  background: #f3cc63;
+  color: #153d36;
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 14px 18px;
+  text-align: center;
+}
+.renewal-fee span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.renewal-fee strong {
+  font-family: "Space Grotesk";
+  font-size: 26px;
+}
+.subscription-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 18px;
+}
+.subscription-grid > div {
+  background: #f4f6f3;
+  border: 1px solid #e2e9e3;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+.subscription-grid span {
+  color: #81968e;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.subscription-grid strong {
+  font-size: 13px;
+}
+.settings-note {
+  color: #789087;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.renewal-steps {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 20px;
+}
+.renewal-steps li {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.renewal-banner-slim {
+  margin-bottom: 16px;
+  padding: 12px 18px;
+}
+.renewal-banner-slim p {
+  font-size: 12px;
+  margin: 0;
+}
+.renewal-banner-slim a {
+  color: #f3cc63;
+  font-weight: 700;
+}
+.subscription-expired-note {
+  background: #f8dcd3;
+  color: #b0472c !important;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 10px;
+  padding: 10px 14px;
 }
 .report-stat-grid,
 .revenue-grid {

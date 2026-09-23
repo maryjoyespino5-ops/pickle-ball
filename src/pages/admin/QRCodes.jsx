@@ -6,6 +6,9 @@ import { useNow } from "../../hooks/useNow";
 import { bookingService } from "../../services/bookingService";
 import { paddleService } from "../../services/paddleService";
 import { formatTime12, todayISO } from "../../utils/dateUtils";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 
 /** Paddle #01, #02, … for display. */
 function paddleLabel(paddle) {
@@ -48,6 +51,7 @@ function PaddleStatusBadge({ status }) {
   return <span className={`status ${meta.cls}`}>{meta.label}</span>;
 }
 export function QRCodes() {
+  const { locked, refresh: refreshLicense } = useSubscriptionLock();
   const [paddles, setPaddles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -102,6 +106,12 @@ export function QRCodes() {
 
   const runAction = async (fn, successText) => {
     if (busy) return { ok: false, message: "busy" };
+    if (locked) {
+      const message = "Your software license has expired. Renew the subscription to continue.";
+      setActionError(message);
+      refreshLicense();
+      return { ok: false, message };
+    }
     setBusy(true);
     setActionError("");
     try {
@@ -110,7 +120,8 @@ export function QRCodes() {
       setFeedback(successText);
       return { ok: true };
     } catch (err) {
-      const message = err.message || "Action failed. Try again.";
+      const message = subscriptionService.subscriptionErrorMessage(err, "Action failed. Try again.");
+      if (subscriptionService.isSubscriptionExpiredError(err)) refreshLicense();
       setActionError(message);
       return { ok: false, message };
     } finally {
@@ -230,6 +241,7 @@ export function QRCodes() {
   }, [paddles]);
 return (
     <div className="admin-page qr-codes-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">PADDLE EQUIPMENT</span>
@@ -243,9 +255,11 @@ return (
           <button className="button outline" onClick={openPrint}>
             Print QR Codes
           </button>
-          <button className="button" onClick={() => setAddOpen(true)}>
-            Add Paddle
-          </button>
+          {!locked && (
+            <button className="button" onClick={() => setAddOpen(true)}>
+              Add Paddle
+            </button>
+          )}
         </div>
       </div>
 
@@ -387,19 +401,25 @@ return (
                     </td>
                     <td className="table-action-cell" data-label="Actions">
                       <div className="row-actions qr-row-actions">
-                        <button disabled={busy} onClick={() => openLink(paddle)}>
-                          {booking ? "Unlink" : "Link booking"}
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => setEditTarget({ ...paddle })}>
-                          Edit
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => handleRegenerateQr(paddle)}>
-                          Generate QR
-                        </button>
+                        {!locked && (
+                          <button disabled={busy} onClick={() => openLink(paddle)}>
+                            {booking ? "Unlink" : "Link booking"}
+                          </button>
+                        )}
+                        {!locked && (
+                          <button
+                            disabled={busy}
+                            onClick={() => setEditTarget({ ...paddle })}>
+                            Edit
+                          </button>
+                        )}
+                        {!locked && (
+                          <button
+                            disabled={busy}
+                            onClick={() => handleRegenerateQr(paddle)}>
+                            Generate QR
+                          </button>
+                        )}
                         <button
                           disabled={busy}
                           onClick={() => handleDownloadQr(paddle)}>
@@ -413,16 +433,20 @@ return (
                           }}>
                           Print
                         </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => handleToggleActive(paddle)}>
-                          {paddle.isActive ? "Deactivate" : "Activate"}
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => setDeleteTarget(paddle)}>
-                          Delete
-                        </button>
+                        {!locked && (
+                          <button
+                            disabled={busy}
+                            onClick={() => handleToggleActive(paddle)}>
+                            {paddle.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                        )}
+                        {!locked && (
+                          <button
+                            disabled={busy}
+                            onClick={() => setDeleteTarget(paddle)}>
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

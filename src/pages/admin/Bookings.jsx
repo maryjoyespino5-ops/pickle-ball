@@ -11,10 +11,14 @@ import { facilityService, buildCourtHours } from "../../services/facilityService
 import { debounce } from "../../utils/debounce";
 import { formatTime12, todayISO, upcomingHours } from "../../utils/dateUtils";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 
 const PAGE_SIZE = 10;
 
 export function Bookings() {
+  const { locked, refresh } = useSubscriptionLock();
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
@@ -92,8 +96,13 @@ export function Bookings() {
   }, [filters]);
   const setFilter = (key, value) =>
     setFilters((current) => ({ ...current, [key]: value }));
+  const expiredMessage = (err, fallback) => {
+    const message = subscriptionService.subscriptionErrorMessage(err, fallback);
+    if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
+    return message;
+  };
   const update = async (action) => {
-    if (!selected) return;
+    if (!selected || locked) return;
     if (action === "cancelled") {
       setCancelTarget(selected);
       return;
@@ -110,10 +119,15 @@ export function Bookings() {
       setSelected(next);
       setFeedback(`Booking ${next.id} updated.`);
     } catch (err) {
-      setActionError(err.message || "Could not update this booking.");
+      setActionError(expiredMessage(err, "Could not update this booking."));
     }
   };
   const beginReschedule = (booking) => {
+    if (locked) {
+      setActionError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     setSelected(null);
     setRescheduleTarget(booking);
     setReschedule({
@@ -135,7 +149,7 @@ export function Bookings() {
       setRescheduleTarget(null);
       setFeedback(`Booking ${next.id} rescheduled.`);
     } catch (error) {
-      setActionError(error.message || "Could not reschedule this booking.");
+      setActionError(expiredMessage(error, "Could not reschedule this booking."));
     }
   };
   const action = (type) => (booking) =>
@@ -145,6 +159,11 @@ export function Bookings() {
         ? beginReschedule(booking)
         : updateSelected(booking, type);
   const updateSelected = async (booking, type) => {
+    if (locked) {
+      setActionError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     setActionError("");
     try {
       const next = await bookingService.updateBooking(booking.id, {
@@ -155,11 +174,16 @@ export function Bookings() {
       );
       setFeedback(`Booking ${next.id} marked ${type}.`);
     } catch (err) {
-      setActionError(err.message || "Could not update this booking.");
+      setActionError(expiredMessage(err, "Could not update this booking."));
     }
   };
   const cancel = async () => {
     if (!cancelTarget) return;
+    if (locked) {
+      setActionError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     setActionError("");
     try {
       const next = await bookingService.updateBooking(cancelTarget.id, {
@@ -175,11 +199,12 @@ export function Bookings() {
       setCancelTarget(null);
       setFeedback(`Booking ${next.id} cancelled.`);
     } catch (err) {
-      setActionError(err.message || "Could not cancel this booking.");
+      setActionError(expiredMessage(err, "Could not cancel this booking."));
     }
   };
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">BOOKING MANAGEMENT</span>
@@ -237,6 +262,7 @@ export function Bookings() {
         <>
           <AdminBookingTable
             bookings={bookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            readOnly={locked}
             onView={setSelected}
             onCancel={action("cancel")}
             onConfirm={action("confirmed")}
@@ -258,6 +284,7 @@ export function Bookings() {
         <Modal title="Booking details" onClose={() => setSelected(null)}>
           <BookingDetails
             booking={selected}
+            readOnly={locked}
             onAction={update}
             onReschedule={() => beginReschedule(selected)}
           />

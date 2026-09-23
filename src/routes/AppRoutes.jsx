@@ -31,6 +31,7 @@ import { Payments as AdminPayments } from "../pages/admin/Payments";
 import { Reports as AdminReports } from "../pages/admin/Reports";
 import { QRCodes as AdminQRCodes } from "../pages/admin/QRCodes";
 import { Settings as AdminSettings } from "../pages/admin/Settings";
+import { Subscription as AdminSubscription } from "../pages/admin/Subscription";
 
 function PublicLayout() {
   return (
@@ -112,6 +113,7 @@ export function AppRoutes() {
         <Route path="/admin/payments" element={<AdminPayments />} />
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/subscription" element={<AdminSubscription />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

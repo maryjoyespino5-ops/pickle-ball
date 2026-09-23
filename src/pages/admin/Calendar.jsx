@@ -10,7 +10,11 @@ import { facilityService } from "../../services/facilityService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12, isPastSlot } from "../../utils/dateUtils";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 export function Calendar() {
+  const { locked, refresh } = useSubscriptionLock();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const requestedCourt = searchParams.get("court") || "";
@@ -112,6 +116,11 @@ export function Calendar() {
   const submit = async (event) => {
     event.preventDefault();
     setError("");
+    if (locked) {
+      setError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     try {
       await bookingService.createAdminBooking({
         ...form,
@@ -120,7 +129,8 @@ export function Calendar() {
         time: slot.time,
       });
     } catch (submissionError) {
-      setError(submissionError.message);
+      setError(subscriptionService.subscriptionErrorMessage(submissionError, "Could not create this booking."));
+      if (subscriptionService.isSubscriptionExpiredError(submissionError)) refresh();
       return;
     }
     await load();
@@ -135,6 +145,7 @@ export function Calendar() {
   };
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">AVAILABILITY PLANNER</span>
@@ -214,6 +225,11 @@ export function Calendar() {
           title={slot.available ? "Create manual booking" : "View booking"}
           onClose={() => setSlot(null)}>
           {slot.available ? (
+            locked ? (
+              <div className="empty-panel">
+                License expired — new bookings are paused. <a href="/admin/subscription">Renew the subscription</a> to resume.
+              </div>
+            ) : (
             <form className="form-card modal-form" onSubmit={submit}>
               <p>
                 Reserve <strong>{slot.court.name}</strong> at{" "}
@@ -289,9 +305,11 @@ export function Calendar() {
                 Create booking
               </button>
             </form>
+            )
           ) : slot.booking ? (
             <BookingDetails
               booking={slot.booking}
+              readOnly={locked}
               onAction={() => setSlot(null)}
               onReschedule={() => setSlot(null)}
             />

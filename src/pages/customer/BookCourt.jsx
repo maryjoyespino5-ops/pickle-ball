@@ -7,6 +7,7 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { courtService } from "../../services/courtService";
 import { bookingService } from "../../services/bookingService";
 import { facilityService } from "../../services/facilityService";
+import { subscriptionService } from "../../services/subscriptionService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12, todayISO } from "../../utils/dateUtils";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
@@ -116,7 +117,12 @@ export function BookCourt() {
       });
       navigate("/my-bookings", { state: { justBooked: true } });
     } catch (err) {
-      setConfirmError(err.message || "Could not confirm booking. Try again.");
+      setConfirmError(
+        subscriptionService.customerSubscriptionMessage(
+          err,
+          "Could not confirm booking. Try again.",
+        ),
+      );
       setCreating(false);
     }
   };

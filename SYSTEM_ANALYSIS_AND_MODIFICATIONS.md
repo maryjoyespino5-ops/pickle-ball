@@ -425,3 +425,30 @@ The bugs cluster into **four themes**:
 4. **Resilience & polish** — missing error handling, debounce, pagination, a11y, SEO, emails, chunking.
 
 Apply **Phase 1 = ship-blockers** first (all small, high-impact), then Phase 2 correctness, then Phase 3 polish. Re-running `npm run build` + `npm run lint` after each batch will keep the app green.
+
+---
+
+## 13. Software subscription / license layer (₱900 monthly)
+
+Added after this analysis: the app is now licensed to **one** business (no
+multi-tenant SaaS), so the whole system gains a single-row license gate.
+
+| Item | Where |
+|---|---|
+| License tables + guards | `supabase/migrations/0014_subscription.sql` |
+| Admin > Subscription (licence status, ₱900 fee, expiry, payment history, renewal steps) | `src/pages/admin/Subscription.jsx` (route `/admin/subscription`, sidebar → SYSTEM) |
+| Server verdict + UI state | `src/services/subscriptionService.js`, `src/context/SubscriptionContext.jsx`, `src/hooks/useSubscriptionLock.js` |
+| Read-only notice while expired | `src/components/common/SubscriptionLockedBanner.jsx` |
+
+Enforcement is **entirely server-side**: RLS read-only + revoked GRANTs +
+`prevent_subscription_tamper()` on the license tables, and the
+`assert_subscription_active()` write guard on `bookings`, `payments`, `courts`,
+`paddles`, and `facility_settings`. When `expires_at` (plus the configurable
+`grace_days`) passes, all admin write actions fail with `SUBSCRIPTION_EXPIRED`
+and the UI renders read-only — every existing record stays readable. Renewals are
+provider-only (`subscription_record_payment`, +30 days per payment) and are
+logged in `subscription_payments` / `subscription_events`. The admin workspace
+therefore has **9 sub-pages** (section 1 of this document lists 7).
+
+Operational details, provider SQL, grace-period configuration, and a test recipe
+live in `README.md` → "Software subscription (₱900 / 30 days)".

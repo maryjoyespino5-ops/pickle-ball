@@ -3,6 +3,8 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { reportService } from "../../services/reportService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { debounce } from "../../utils/debounce";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
 
 function isoDateOffset(days) {
   const date = new Date();
@@ -24,6 +26,7 @@ function weekdayLetter(isoDate) {
 }
 
 export function Reports() {
+  const { locked } = useSubscriptionLock();
   const [report, setReport] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [filters, setFilters] = useState({
@@ -112,6 +115,7 @@ export function Reports() {
     );
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">THE BIG PICTURE</span>
@@ -155,7 +159,7 @@ export function Reports() {
             <option value="paid">Paid</option>
             <option value="refunded">Refunded</option>
           </select>
-          <button className="button outline" onClick={exportReport}>
+          <button className="button outline" onClick={exportReport} disabled={locked} title={locked ? "Renew the subscription to export reports" : undefined}>
             Export report
           </button>
         </div>

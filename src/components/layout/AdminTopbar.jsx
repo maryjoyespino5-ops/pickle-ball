@@ -16,6 +16,7 @@ const titles = {
   "/admin/payments": "Payments",
   "/admin/reports": "Reports",
   "/admin/settings": "Settings",
+  "/admin/subscription": "Subscription",
 };
 export function AdminTopbar() {
   const { user, logout } = useAuth();

@@ -5,8 +5,12 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { Modal } from "../../components/common/Modal";
 import { courtService } from "../../services/courtService";
 import { formatCurrency } from "../../utils/currencyUtils";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 
 export function Courts() {
+  const { locked, refresh } = useSubscriptionLock();
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -30,6 +34,11 @@ export function Courts() {
   }, []);
   const update = async (changes) => {
     if (!selected) return;
+    if (locked) {
+      setSaveError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     if (!String(selected.name || "").trim()) {
       setSaveError("Court name is required.");
       return;
@@ -52,13 +61,15 @@ export function Courts() {
       setCourts(next);
       setSelected(null);
     } catch (err) {
-      setSaveError(err.message || "Could not save this court. Try again.");
+      setSaveError(subscriptionService.subscriptionErrorMessage(err, "Could not save this court. Try again."));
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     } finally {
       setSaving(false);
     }
   };
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">FACILITY MANAGEMENT</span>
@@ -107,14 +118,16 @@ export function Courts() {
                   </span>
                 </div>
                 <div className="court-card-actions">
-                  <button
-                    className="button outline"
-                    onClick={() => {
-                      setSaveError("");
-                      setSelected({ ...court });
-                    }}>
-                    Edit court
-                  </button>
+                  {!locked && (
+                    <button
+                      className="button outline"
+                      onClick={() => {
+                        setSaveError("");
+                        setSelected({ ...court });
+                      }}>
+                      Edit court
+                    </button>
+                  )}
                   <button
                     className="text-button"
                     onClick={() => navigate(`/admin/calendar?court=${court.id}`)}>

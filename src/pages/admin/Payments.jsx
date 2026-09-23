@@ -4,7 +4,11 @@ import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
+import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
+import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
+import { subscriptionService } from "../../services/subscriptionService";
 export function Payments() {
+  const { locked, refresh } = useSubscriptionLock();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -30,6 +34,11 @@ export function Payments() {
     load();
   }, []);
   const markPaid = async (id) => {
+    if (locked) {
+      setActionError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     setActionError("");
     try {
       const next = await paymentService.updatePayment(id, "paid");
@@ -37,7 +46,8 @@ export function Payments() {
         items.map((item) => (item.id === next.id ? next : item)),
       );
     } catch (err) {
-      setActionError(err.message || "Could not mark this payment as paid.");
+      setActionError(subscriptionService.subscriptionErrorMessage(err, "Could not mark this payment as paid."));
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     }
   };
   const visible = payments.filter((payment) => {
@@ -51,6 +61,11 @@ export function Payments() {
     );
   });
   const refund = async () => {
+    if (locked) {
+      setActionError("Your software license has expired. Renew the subscription to continue.");
+      refresh();
+      return;
+    }
     setActionError("");
     try {
       const next = await paymentService.updatePayment(
@@ -62,11 +77,13 @@ export function Payments() {
       );
       setRefundTarget(null);
     } catch (err) {
-      setActionError(err.message || "Could not refund this payment.");
+      setActionError(subscriptionService.subscriptionErrorMessage(err, "Could not refund this payment."));
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     }
   };
   return (
     <div className="admin-page">
+      <SubscriptionLockedBanner />
       <div className="admin-page-heading">
         <div>
           <span className="admin-kicker">MONEY IN, MADE SIMPLE</span>
@@ -153,14 +170,14 @@ export function Payments() {
                     onClick={() => setSelected(payment)}>
                     View
                   </button>
-                  {payment.paymentStatus === "pending" && (
+                  {payment.paymentStatus === "pending" && !locked && (
                     <button
                       className="row-link"
                       onClick={() => markPaid(payment.id)}>
                       Mark paid
                     </button>
                   )}
-                  {payment.paymentStatus === "paid" && (
+                  {payment.paymentStatus === "paid" && !locked && (
                     <button
                       className="row-link"
                       onClick={() => setRefundTarget(payment)}>
