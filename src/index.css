@@ -474,6 +474,11 @@ body {
 .site-header .brand {
   flex-shrink: 0;
 }
+/* The short brand label is desktop-hidden; the mobile block below swaps
+   brand-full for brand-short so the header never wraps or clips. */
+.brand-short {
+  display: none;
+}
 .public-nav {
   display: flex;
   gap: 28px;
@@ -1500,41 +1505,76 @@ select {
 }
 @media (max-width: 760px) {
   .site-header {
-    flex-wrap: wrap;
-    padding: 20px;
+    /* One row only: brand + Log in + Book a court + hamburger. The nav panel
+       is taken out of the flex flow below, so nothing wraps. */
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 12px 16px;
+    position: relative;
+  }
+  /* Let the brand give up space first so the actions never get pushed down. */
+  .site-header .brand {
+    flex-shrink: 1;
+    font-size: 14px;
+    gap: 8px;
+    min-width: 0;
+  }
+  /* Swap the two-word name for the short label: no clipping, no wrap, and the
+     actions keep their room on the narrowest phones. */
+  .site-header .brand .brand-full {
+    display: none;
+  }
+  .site-header .brand .brand-short {
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-header .brand-mark {
+    flex-shrink: 0;
+    height: 28px;
+    width: 28px;
   }
   .public-nav {
     display: none;
-    /* Keep the expanded panel on its own row below the header actions. */
-    order: 3;
   }
+  /* Expanded menu hangs below the header instead of sitting in the flex row,
+     so opening it can never reflow the brand/actions. */
   .public-nav.open {
-    background: rgba(246, 245, 239, 0.96);
+    background: rgba(246, 245, 239, 0.98);
     border-bottom: 1px solid var(--line);
     border-top: 1px solid var(--line);
+    box-shadow: 0 18px 30px rgba(23, 61, 55, 0.08);
     display: flex;
-    flex: 1 0 100%;
     flex-direction: column;
     gap: 2px;
-    margin-left: 0;
-    padding: 6px 0;
+    left: 0;
+    margin: 0;
+    padding: 6px 16px 10px;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 20;
   }
   .public-nav.open a {
     display: block;
-    font-size: 14px;
+    font-size: 15px;
     padding: 13px 10px;
   }
   .public-nav.open a.active {
     background: #edf1e9;
   }
+  /* The three actions sit together, vertically centred on the brand. */
   .header-actions {
-    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
     margin-left: auto;
-    /* Stay on the first row with the brand; drop the menu panel below. */
-    order: 2;
   }
   .header-login {
     font-size: 12px;
+    padding: 8px 2px;
+    white-space: nowrap;
   }
   .nav-toggle {
     align-items: center;
@@ -1543,14 +1583,21 @@ select {
     border-radius: 9px;
     color: var(--ink);
     display: inline-flex;
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0;
+    flex-shrink: 0;
+    height: 40px;
     justify-content: center;
+    padding: 0;
+    width: 40px;
   }
   .site-header .button {
     font-size: 12px;
-    padding: 9px 13px;
+    padding: 10px 13px;
+    white-space: nowrap;
+  }
+  /* The arrow inside the Book a court button adds width we do not need on a
+     phone — the label alone reads fine. */
+  .site-header .button span[aria-hidden="true"] {
+    display: none;
   }
   .site-footer {
     align-items: flex-start;
@@ -1559,7 +1606,13 @@ select {
     padding: 28px 20px;
   }
   .footer-links {
+    /* Wrap into an even grid instead of one long row: five links in a single
+       line overflowed a 320px screen and squeezed the last two together. */
+    display: grid;
+    gap: 12px 20px;
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
     order: 3;
+    width: 100%;
   }
   .home-hero {
     display: block;
@@ -3876,4 +3929,33 @@ select {
     font-size: 26px;
   }
 }
-
+/* ---------------------------------------------------------------------------
+   Extra-narrow phones (iPhone SE / 320px class).
+   Keeps the public header on ONE row with a little more breathing room by
+   tightening the gaps and shrinking the two interactive controls, instead of
+   letting the page scroll sideways.
+   ------------------------------------------------------------------------ */
+@media (max-width: 360px) {
+  .site-header {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .site-header .brand {
+    font-size: 13px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .header-login {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+  .nav-toggle {
+    height: 36px;
+    width: 36px;
+  }
+  .site-header .button {
+    font-size: 11px;
+    padding: 9px 10px;
+  }
+}

@@ -16,8 +16,19 @@ export function Navbar() {
   return (
     <header className="site-header">
       <Link className="brand" to="/">
-        <img className="brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
-        <span>Alicayard Pickle Ball</span>
+        <img
+          className="brand-mark"
+          src="/favicon.png"
+          alt="Alicayard Pickle Ball logo"
+        />
+        {/* Full name on wide screens; a short label on phones so the header
+            stays one compact row instead of wrapping or clipping the name.
+            Only one of the two is ever visible, so the link's accessible name
+            stays exactly "Alicayard Pickle Ball". */}
+        <span className="brand-full">Alicayard Pickle Ball</span>
+        <span className="brand-short" aria-hidden="true">
+          Alicayard
+        </span>
       </Link>
       <nav
         className={`public-nav${navOpen ? " open" : ""}`}
@@ -52,7 +63,9 @@ export function Navbar() {
         <button
           type="button"
           className="nav-toggle"
-          aria-label={navOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-label={
+            navOpen ? "Close navigation menu" : "Open navigation menu"
+          }
           aria-expanded={navOpen}
           aria-controls="public-nav"
           onClick={() => setNavOpen(!navOpen)}>
