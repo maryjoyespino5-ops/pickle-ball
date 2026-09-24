@@ -76,24 +76,38 @@ async function verifySignature(rawBody: string, header: string): Promise<boolean
 
 /** Pull the fields we care about out of the PayMongo event payload. */
 function readPaidEvent(event: Record<string, unknown>) {
-  const data = (event?.data ?? {}) as Record<string, unknown>;
-  const attributes = (data?.attributes ?? {}) as Record<string, unknown>;
-  const type = String(event?.data?.attributes?.type ?? event?.data?.type ?? "");
+  // PayMongo event envelope:
+  //   { data: { id, type: "event", attributes: {
+  //       type: "link.payment.paid", livemode,
+  //       data: { id, type: "link"|"payment", attributes: { amount, status,
+  //               reference_number, payments: [{ id, attributes: {...} }] } }
+  //   } } }
+  // Some event types put the resource fields directly under data.attributes
+  // (no extra `data` level). We accept both shapes.
+  const eventAttrs = ((event?.data as Record<string, unknown>)?.attributes ??
+    {}) as Record<string, unknown>;
+  const resource = (eventAttrs?.data ?? eventAttrs) as Record<string, unknown>;
+  const attributes = (resource?.attributes ?? resource ?? {}) as Record<string, unknown>;
+  const type = String(eventAttrs?.type ?? (event?.data as Record<string, unknown>)?.type ?? "");
 
-  // Payment details can sit in attributes.payments[0] (link.payment.paid) or
-  // attributes directly (payment.paid).
+  // Payment details can sit in attributes.payments[0] (link.payment.paid) or in
+  // the resource itself (payment.paid).
   const payments = Array.isArray(attributes?.payments)
     ? (attributes.payments as Record<string, unknown>[])
     : [];
   const first = payments[0] ?? {};
   const firstAttrs = (first?.attributes ?? {}) as Record<string, unknown>;
 
+  // PayMongo reports amounts in CENTAVOS (99900 = ₱999.00). Convert to pesos
+  // the database understands, matching how the license fee is stored.
+  const rawAmount =
+    (firstAttrs?.amount as number) ?? (attributes?.amount as number) ?? null;
   const amount =
-    (firstAttrs?.amount as number) ??
-    (attributes?.amount as number) ??
-    null;
+    typeof rawAmount === "number" ? Math.round(rawAmount) / 100 : null;
+
   const paymentId =
     (first?.id as string) ??
+    (resource?.id as string) ??
     (attributes?.id as string) ??
     null;
   const status = String(firstAttrs?.status ?? attributes?.status ?? "");
