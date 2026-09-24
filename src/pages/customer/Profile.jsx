@@ -16,7 +16,7 @@ function initials(name = "") {
 
 export function Profile() {
   useScrollReveal();
-  const { user, updateProfile, updatePassword } = useAuth();
+  const { user, updateProfile, updatePassword, verifyPassword } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -57,6 +57,10 @@ export function Profile() {
     event.preventDefault();
     setPasswordError("");
     setPasswordNotice("");
+    if (!password.current) {
+      setPasswordError("Enter your current password to make this change.");
+      return;
+    }
     if (password.next !== password.confirm) {
       setPasswordError("New passwords do not match.");
       return;
@@ -66,6 +70,10 @@ export function Profile() {
       return;
     }
     try {
+      // A live session alone is not enough to change the password — confirm
+      // the current one first so a hijacked/unlocked session cannot lock the
+      // real owner out.
+      await verifyPassword(password.current);
       await updatePassword(password.next);
       setPassword({ current: "", next: "", confirm: "" });
       setPasswordNotice("Password updated. Use it the next time you sign in.");
@@ -145,10 +153,23 @@ export function Profile() {
         <Modal title="Change password" onClose={() => setPasswordOpen(false)}>
           <form className="form-card modal-form" onSubmit={submitPassword}>
             <label>
+              Current password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password.current}
+                onChange={(event) =>
+                  setPassword({ ...password, current: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
               New password
               <input
                 type="password"
                 minLength="8"
+                autoComplete="new-password"
                 value={password.next}
                 onChange={(event) =>
                   setPassword({ ...password, next: event.target.value })

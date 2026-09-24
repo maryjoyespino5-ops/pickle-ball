@@ -83,6 +83,9 @@ export async function updatePayment(id, paymentStatus) {
   assertSupabase();
   const patch = { status: paymentStatus };
   if (paymentStatus === "paid") patch.paid_at = new Date().toISOString();
+  // The payments_sync_booking_status trigger mirrors this onto
+  // bookings.payment_status in the same transaction (M2), so we no longer do a
+  // separate, race-prone booking update here.
   const { data, error } = await supabase
     .from("payments")
     .update(patch)
@@ -90,15 +93,6 @@ export async function updatePayment(id, paymentStatus) {
     .select(paymentSelect)
     .single();
   if (error) throw error;
-
-  // Keep the booking's payment_status in sync so reports stay consistent.
-  if (data?.booking_id) {
-    const { error: bookingError } = await supabase
-      .from("bookings")
-      .update({ payment_status: paymentStatus })
-      .eq("id", data.booking_id);
-    if (bookingError) throw bookingError;
-  }
   const profiles = await fetchProfilesMap();
   return toAppPayment(data, profiles);
 }

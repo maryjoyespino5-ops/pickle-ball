@@ -1,6 +1,34 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { copyFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
+
+/**
+ * Guard against leaking secrets into the client bundle (H2).
+ * Anything prefixed VITE_ is inlined into the shipped JavaScript, so a
+ * service-role key, JWT secret, or DB password under a VITE_ name would be
+ * public. Fail the build loudly instead of shipping it.
+ */
+function assertNoClientSecrets(mode) {
+  return {
+    name: "assert-no-client-secrets",
+    configResolved(config) {
+      // config.root is the resolved project directory — no need to touch
+      // `process`, which is not available in the ESLint browser env config.
+      const env = loadEnv(mode, config.root, "");
+      const forbidden = /(SERVICE_ROLE|SECRET|PRIVATE|PASSWORD|PASSWD|API_KEY|ACCESS_TOKEN|DB_URL|DATABASE)/i;
+      const offenders = Object.keys(env).filter(
+        (key) => key.startsWith("VITE_") && forbidden.test(key),
+      );
+      if (offenders.length > 0) {
+        throw new Error(
+          `Refusing to build: these VITE_ variables look like secrets and would be shipped to the browser: ${offenders.join(
+            ", ",
+          )}. Remove the VITE_ prefix (server-only) or rename them.`,
+        );
+      }
+    },
+  };
+}
 
 /**
  * SPA fallback for GitHub Pages / plain static hosts: after the build, copy
@@ -23,8 +51,8 @@ function spa404Fallback() {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), spa404Fallback()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), assertNoClientSecrets(mode), spa404Fallback()],
   build: {
     rollupOptions: {
       output: {
@@ -37,4 +65,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

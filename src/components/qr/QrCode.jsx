@@ -48,7 +48,10 @@ export function QrCode({
       ref={canvasRef}
       className={className}
       role="img"
-      aria-label={value ? `QR code for ${value}` : "QR code"}
+      // M7: never put the encoded value (which contains the booking/paddle
+      // token) into the accessible name — that leaks the secret to screen
+      // readers, assistive logs and DOM snapshots. A generic label is enough.
+      aria-label="QR code"
     />
   );
 }

@@ -246,9 +246,8 @@ export function Calendar() {
                 />
               </label>
               <label>
-                Email
+                Email (optional)
                 <input
-                  required
                   type="email"
                   value={form.email}
                   onChange={(event) =>

@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- M7: booking/paddle links carry a secret token in the URL. Do not leak
+         it to any third-party origin through the Referer header. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#123c35" />
     <meta
       name="description"

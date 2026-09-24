@@ -33,7 +33,7 @@ export async function getCourts() {
   assertSupabase();
   const { data, error } = await supabase
     .from("courts")
-    .select("*")
+    .select("id, name, description, accent, price_per_hour, is_active")
     .eq("is_active", true)
     .order("name");
   if (error) throw error;
@@ -44,7 +44,7 @@ export async function getAvailability(date) {
   assertSupabase();
   const { data: courtRows, error: courtsError } = await supabase
     .from("courts")
-    .select("*")
+    .select("id, name, description, accent, price_per_hour, is_active")
     .eq("is_active", true)
     .order("name");
   if (courtsError) throw courtsError;
@@ -97,7 +97,9 @@ export async function getManagedCourts() {
   assertSupabase();
   const { data, error } = await supabase
     .from("courts")
-    .select("*")
+    .select(
+      "id, name, description, accent, price_per_hour, is_active, maintenance, image",
+    )
     .order("name");
   if (error) throw error;
   return (data || []).map((row) => ({

@@ -73,7 +73,8 @@ export function Login() {
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
+          poster="/favicon.png"
           aria-hidden="true"
         >
           <source src="/vid1.mp4" type="video/mp4" />

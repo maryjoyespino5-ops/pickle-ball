@@ -11,7 +11,9 @@ import { supabase, isSupabaseConfigured } from "./supabase";
  * (`user_id=eq.<id>`) so the socket only receives that customer's own booking
  * events (S4) — admins keep the unfiltered channel.
  *
- * Events are debounced (350 ms) so a burst of changes triggers one refetch.
+ * Events are debounced (700 ms) so a burst of changes triggers one refetch.
+ * L3: a slightly longer window coalesces admin/customer bursts (e.g. a batch
+ * of bookings) into a single reload instead of several back-to-back ones.
  */
 
 let currentUser = null;
@@ -24,7 +26,7 @@ function schedule() {
   timer = setTimeout(() => {
     timer = null;
     subscribers.forEach((handler) => handler());
-  }, 350);
+  }, 700);
 }
 
 function teardown() {

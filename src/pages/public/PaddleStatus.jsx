@@ -108,7 +108,7 @@ export function PaddleStatus() {
         {status === "in_use" && (
           <div className="paddle-status-times">
             <div>
-              <small>Rental</small>
+              <small>Reserved by</small>
               <strong>{data.rental_name || "Guest"}</strong>
             </div>
             <div>
@@ -128,7 +128,7 @@ export function PaddleStatus() {
         {status === "reserved" && (
           <div className="paddle-status-times">
             <div>
-              <small>Rental</small>
+              <small>Reserved by</small>
               <strong>{data.rental_name || "Guest"}</strong>
             </div>
             <div>

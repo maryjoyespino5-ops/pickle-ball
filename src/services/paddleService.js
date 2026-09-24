@@ -116,7 +116,12 @@ function toPaddle(row, bookingMap = {}, profileMap = {}) {
 export async function getPaddles() {
   assertSupabase();
   const [paddleResult, bookingResult, profileResult] = await Promise.all([
-    supabase.from("paddles").select("*").order("paddle_number"),
+    supabase
+      .from("paddles")
+      .select(
+        "id, paddle_number, name, qr_token, status, is_active, created_at, updated_at",
+      )
+      .order("paddle_number"),
     supabase
       .from("bookings")
       .select(
@@ -174,15 +179,16 @@ export async function createPaddle({ paddleNumber, name = "" }) {
   assertSupabase();
   const number = String(paddleNumber || "").trim();
   if (!number) throw new Error("Paddle number is required.");
+  // L1: do NOT set a predictable qr_token here. The database default assigns a
+  // random, unguessable token so paddle QRs cannot be enumerated.
   const { data, error } = await supabase
     .from("paddles")
     .insert({
       paddle_number: number,
       name: String(name || "").trim(),
-      qr_token: qrTokenFor(number),
       status: "available",
     })
-    .select("*")
+    .select("id, paddle_number, name, qr_token, status, is_active, created_at, updated_at")
     .single();
   if (error) {
     if (error.code === "23505")
@@ -209,7 +215,7 @@ export async function updatePaddle(id, changes) {
     .from("paddles")
     .update(payload)
     .eq("id", id)
-    .select("*")
+    .select("id, paddle_number, name, qr_token, status, is_active, created_at, updated_at")
     .single();
   if (error) {
     if (error.code === "23505")
@@ -221,25 +227,18 @@ export async function updatePaddle(id, changes) {
 /** Issue a fresh, unique QR token for an existing paddle. */
 export async function regenerateQrToken(id) {
   assertSupabase();
-  const { data: current, error: readError } = await supabase
-    .from("paddles")
-    .select("paddle_number")
-    .eq("id", id)
-    .single();
-  if (readError) throw readError;
-  const base = qrTokenFor(current?.paddle_number);
-  const { data: clash } = await supabase
-    .from("paddles")
-    .select("id")
-    .eq("qr_token", base)
-    .neq("id", id)
-    .maybeSingle();
-  const qrToken = clash ? `${base}-${Math.random().toString(36).slice(2, 7)}` : base;
+  // L1: a cryptographically random token (never derived from the paddle number,
+  // which would be guessable). crypto.randomUUID is available in all target
+  // browsers; the DB default is the ultimate backstop.
+  const qrToken =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
   const { data, error } = await supabase
     .from("paddles")
     .update({ qr_token: qrToken })
     .eq("id", id)
-    .select("*")
+    .select("id, paddle_number, name, qr_token, status, is_active, created_at, updated_at")
     .single();
   if (error) throw error;
   return toPaddle(data);

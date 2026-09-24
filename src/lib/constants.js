@@ -5,6 +5,16 @@ export const BOOKING_STATUSES = {
   CANCELLED: "cancelled",
 };
 export const HOURLY_RATE = 300;
+
+/**
+ * L2: The facility operates in a single timezone. Booking wall-clock times are
+ * stored WITHOUT an offset (a date + HH:00), and the past-slot rule
+ * (0013_reject_past_bookings.sql) compares against Asia/Manila on the server.
+ * The client mirrors that rule using the viewer's browser clock for instant
+ * feedback — correct for a Manila-based facility. If this facility is ever used
+ * across timezones, switch every comparison to this IANA zone on both sides.
+ */
+export const FACILITY_TIMEZONE = "Asia/Manila";
 export const COURT_HOURS = [
   "07:00",
   "08:00",

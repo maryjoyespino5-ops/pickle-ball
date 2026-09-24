@@ -4151,3 +4151,47 @@ select {
     padding: 9px 10px;
   }
 }
+/* ---------------------------------------------------------------------------
+   M9: Top-level error boundary recovery screen. Matches the auth/page styling
+   so a caught error still looks like part of the product.
+   ------------------------------------------------------------------------ */
+.error-boundary-page {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 48px 20px;
+}
+
+.error-boundary-card {
+  background: var(--panel, #fffdf8);
+  border: 1px solid rgba(23, 61, 55, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(23, 61, 55, 0.08);
+  max-width: 520px;
+  padding: 40px;
+  text-align: left;
+  width: 100%;
+}
+
+.error-boundary-card h1 {
+  font-size: 30px;
+  line-height: 1.15;
+  margin: 12px 0 14px;
+}
+
+.error-boundary-card h1 em {
+  color: var(--ink);
+  font-style: italic;
+}
+
+.error-boundary-card p {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.error-boundary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

@@ -1,0 +1,983 @@
+/* =========================================================================
+   Frontend enhancement layer — loaded LAST, after index.css + premium.css.
+   Refines the shared design language (tokens, spacing, radii, shadows),
+   polishes every shared component, and unifies customer + admin surfaces.
+   Purely presentational: no markup contracts or behaviour are changed, so the
+   backend and all existing functionality are untouched.
+   ========================================================================= */
+
+/* ------------------------------------------------------------------ tokens */
+:root {
+  /* Refined brand palette (same hue family, richer depth) */
+  --ink: #0d2f28;
+  --ink-soft: #16453c;
+  --muted: #5f7a71;
+  --muted-2: #7c948b;
+  --paper: #f5f4ee;
+  --paper-2: #eef1ea;
+  --panel: #ffffff;
+  --line: #e4eae3;
+  --line-strong: #d3ddd3;
+
+  --coral: #e87555;
+  --coral-deep: #d55c3b;
+  --yellow: #f2cb62;
+  --mint: #dcebe2;
+  --teal: #1f7a68;
+
+  /* Gradients */
+  --grad-brand: linear-gradient(135deg, #1a4d43 0%, #0d2f28 100%);
+  --grad-coral: linear-gradient(135deg, #ef8a6a 0%, #d55c3b 100%);
+  --grad-mint: linear-gradient(135deg, #eaf4ee 0%, #dcebe2 100%);
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radii — rounder, softer, more modern */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Shadows — layered and softer */
+  --shadow-xs: 0 1px 2px rgba(13, 47, 40, 0.06);
+  --shadow-sm: 0 2px 10px rgba(13, 47, 40, 0.07);
+  --shadow: 0 14px 38px rgba(13, 47, 40, 0.1);
+  --shadow-lg: 0 28px 70px rgba(13, 47, 40, 0.16);
+  --shadow-focus: 0 0 0 4px rgba(31, 122, 104, 0.22);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Consistent, comfortable body metrics */
+  --container: 1180px;
+}
+
+/* -------------------------------------------------------------------- base */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  /* Prevent horizontal scroll from any stray wide element on mobile. */
+  overflow-x: hidden;
+}
+
+* {
+  min-width: 0;
+}
+
+:where(h1, h2, h3, h4) {
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+}
+
+/* Keyboard focus ring — visible, consistent, never on mouse clicks. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
+/* Nicer, brand-tinted selection */
+::selection {
+  background: rgba(31, 122, 104, 0.2);
+}
+
+/* Scrollbars (subtle, matching) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--radius-pill);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-2);
+  background-clip: content-box;
+}
+
+/* --------------------------------------------------------------- buttons */
+.button {
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  gap: var(--space-2);
+  padding: 13px 24px;
+  transition:
+    transform 0.22s var(--ease),
+    box-shadow 0.22s var(--ease),
+    background 0.22s var(--ease),
+    color 0.22s var(--ease),
+    border-color 0.22s var(--ease);
+  white-space: nowrap;
+}
+.button:hover {
+  transform: translateY(-2px);
+}
+.button:active {
+  transform: translateY(0) scale(0.99);
+}
+.button.outline {
+  background: var(--panel);
+  border: 1.5px solid var(--line-strong);
+  color: var(--ink);
+}
+.button.outline:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+.button.danger {
+  background: var(--grad-coral);
+  border-color: transparent;
+}
+.button:disabled,
+.button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+.button.full-width {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Text/row buttons gain a comfortable tap target and hover affordance. */
+.text-button,
+.row-link,
+.row-actions button {
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+
+/* --------------------------------------------------------------- alerts */
+.ui-alert {
+  align-items: center;
+  border-radius: var(--radius-md);
+  display: flex;
+  font-size: 13.5px;
+  gap: var(--space-3);
+  line-height: 1.45;
+  margin: 0;
+  padding: 12px 15px;
+}
+.ui-alert-dot {
+  border-radius: var(--radius-pill);
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+.ui-alert-error {
+  background: #fdecea;
+  border: 1px solid #f6cfc8;
+  color: #a33522;
+}
+.ui-alert-error .ui-alert-dot {
+  background: #d55c3b;
+}
+.ui-alert-success {
+  background: #e8f5ee;
+  border: 1px solid #c6e6d4;
+  color: #1c6b4c;
+}
+.ui-alert-success .ui-alert-dot {
+  background: #1f9d63;
+}
+
+/* Existing message classes get the same friendly treatment. */
+.error-message {
+  background: #fdecea;
+  border: 1px solid #f6cfc8;
+  border-radius: var(--radius-md);
+  color: #a33522;
+  display: block;
+  font-size: 13.5px;
+  padding: 12px 15px;
+}
+.success-message {
+  background: #e8f5ee;
+  border: 1px solid #c6e6d4;
+  border-radius: var(--radius-md);
+  color: #1c6b4c;
+  display: block;
+  font-size: 13.5px;
+  padding: 12px 15px;
+}
+
+/* ---------------------------------------------------- loading & skeletons */
+.ui-loading {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  gap: var(--space-3);
+  font-size: 14px;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+}
+.ui-loading-inline {
+  justify-content: flex-start;
+  padding: 0;
+}
+.ui-spinner {
+  animation: ui-spin 0.7s linear infinite;
+  border: 2.5px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  border-top-color: var(--teal);
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+}
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ui-skeleton {
+  animation: ui-shimmer 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef1ea 0%, #f6f7f2 40%, #eef1ea 80%);
+  background-size: 400px 100%;
+  display: block;
+  max-width: 100%;
+}
+@keyframes ui-shimmer {
+  from {
+    background-position: -400px 0;
+  }
+  to {
+    background-position: 400px 0;
+  }
+}
+
+/* Upgraded plain loading text where a class is present */
+.loading-state {
+  color: var(--muted);
+  font-size: 14px;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+}
+
+/* --------------------------------------------------------- empty states */
+.ui-empty {
+  align-items: center;
+  background: var(--panel);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+}
+.ui-empty-compact {
+  padding: var(--space-5);
+}
+.ui-empty-icon {
+  align-items: center;
+  background: var(--grad-mint);
+  border-radius: var(--radius-pill);
+  color: var(--teal);
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  margin-bottom: var(--space-1);
+  width: 48px;
+}
+.ui-empty-title {
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 17px;
+}
+.ui-empty-text {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0;
+  max-width: 42ch;
+}
+.ui-empty-action {
+  margin-top: var(--space-3);
+}
+
+/* Existing empty panels inherit the same feel. */
+.empty-panel {
+  background: var(--panel);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  font-size: 13.5px;
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ forms */
+.form-card {
+  border-radius: var(--radius-lg);
+}
+label {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+input,
+select,
+textarea {
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--teal);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-2);
+} /* =========================================================================
+   NAVIGATION — public header, sidebars, topbar
+   ========================================================================= */
+
+/* Public header: cleaner glass, better spacing, softer shadow. */
+.site-header {
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  background: rgba(246, 245, 239, 0.82);
+  border-bottom: 1px solid rgba(227, 233, 226, 0.9);
+  box-shadow: 0 2px 20px rgba(13, 47, 40, 0.05);
+  padding: 14px clamp(16px, 5vw, 64px);
+}
+
+.public-nav a,
+.header-login {
+  font-weight: 600;
+}
+
+/* Mobile burger gets a proper tap target and rounded hover. NOTE: the base
+   rule keeps it `display: none` above the breakpoint, so we must NOT set
+   `display` here — that would reveal it on desktop. Layout is applied only
+   inside the mobile breakpoint below. */
+.nav-toggle {
+  align-items: center;
+  border-radius: var(--radius-sm);
+  justify-content: center;
+  transition: background 0.2s var(--ease);
+  height: 44px;
+  width: 44px;
+}
+.nav-toggle:hover {
+  background: var(--mint);
+}
+
+/* The existing mobile breakpoint reveals the burger; reinforce the tap size
+   there without touching the desktop display. */
+@media (max-width: 860px) {
+  .nav-toggle {
+    display: inline-flex;
+  }
+}
+
+/* Mobile dropdown menu: animated, solid card with clear separation so page
+   content behind it never bleeds through. */
+.public-nav {
+  border-radius: var(--radius-lg);
+  transition:
+    opacity 0.28s var(--ease),
+    transform 0.28s var(--ease),
+    visibility 0.28s;
+}
+@media (max-width: 860px) {
+  .public-nav {
+    padding: var(--space-3);
+  }
+  /* Force an opaque, elevated card — overrides the near-transparent base rule
+     (rgba 0.98) so headings behind the menu cannot show through. */
+  .public-nav.open {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: #ffffff;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .public-nav a {
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    transition: background 0.2s var(--ease);
+  }
+  .public-nav a:hover,
+  .public-nav a.active {
+    background: var(--mint);
+  }
+  .public-nav a::after {
+    display: none;
+  }
+}
+
+/* ---- Customer sidebar (desktop) ----------------------------------------- */
+.customer-sidebar nav a {
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+.customer-sidebar nav a:hover {
+  transform: translateX(2px);
+}
+
+/* ---- Admin sidebar ------------------------------------------------------- */
+.admin-sidebar {
+  scrollbar-width: thin;
+}
+.admin-sidebar a,
+.admin-sidebar button {
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+.admin-sidebar a:hover {
+  transform: translateX(2px);
+}
+
+/* ---- Admin topbar -------------------------------------------------------- */
+.admin-topbar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Popovers (notifications / profile): rounded, animated, elevated. */
+.topbar-popover {
+  animation: ui-pop 0.18s var(--ease-out) both;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+@keyframes ui-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.profile-popover a,
+.profile-popover button {
+  border-radius: var(--radius-sm);
+  transition: background 0.18s var(--ease);
+}
+.profile-popover a:hover,
+.profile-popover button:hover {
+  background: var(--mint);
+}
+
+/* Keep the sticky header and the mobile customer header from overlapping. */
+.mobile-customer-header {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--line);
+} /* =========================================================================
+   MODALS & OVERLAYS — rounded, blurred backdrop, smooth entrance
+   ========================================================================= */
+.modal-backdrop {
+  animation: ui-backdrop 0.25s var(--ease) both;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(9, 30, 25, 0.5);
+}
+@keyframes ui-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.modal {
+  animation: ui-modal-in 0.32s var(--ease-out) both;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+@keyframes ui-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.modal > h2 {
+  letter-spacing: -0.02em;
+}
+.modal-close {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  height: 40px;
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease),
+    transform 0.2s var(--ease);
+  width: 40px;
+}
+.modal-close:hover {
+  background: #f3ded9;
+  color: var(--coral-deep);
+  transform: rotate(90deg);
+}
+
+/* Dialogs feel snug on phones and never spill past the viewport. */
+@media (max-width: 560px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 92vh;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    animation: ui-sheet-in 0.34s var(--ease-out) both;
+  }
+  @keyframes ui-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .modal > h2 {
+    font-size: 20px;
+    padding-right: 48px;
+  }
+}
+
+/* The bottom-sheet modal needs a little grab affordance on mobile. */
+@media (max-width: 560px) {
+  .modal::before {
+    background: var(--line-strong);
+    border-radius: var(--radius-pill);
+    content: "";
+    height: 4px;
+    left: 50%;
+    position: absolute;
+    top: 10px;
+    transform: translateX(-50%);
+    width: 40px;
+  }
+  .modal > h2 {
+    margin-top: 6px;
+  }
+} /* =========================================================================
+   CARDS, TABLES, STATS, TIME SLOTS, CALENDAR
+   ========================================================================= */
+
+/* ---- Generic cards ------------------------------------------------------ */
+.court-option,
+.managed-court-card,
+.stat-card,
+.settings-card,
+.profile-card,
+.booking-details,
+.payment-detail,
+.customer-details,
+.admin-section,
+.court-status-grid > * {
+  border-radius: var(--radius-lg);
+  transition:
+    box-shadow 0.28s var(--ease),
+    transform 0.28s var(--ease),
+    border-color 0.28s var(--ease);
+}
+
+/* Interactive cards lift gently on hover. */
+.court-option:hover,
+.managed-court-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+.court-option.selected {
+  box-shadow:
+    0 0 0 2px var(--teal) inset,
+    var(--shadow);
+}
+
+/* ---- Stat cards --------------------------------------------------------- */
+.admin-stat-grid .stat-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.28s var(--ease),
+    box-shadow 0.28s var(--ease);
+}
+.admin-stat-grid .stat-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+
+/* ---- Time slots --------------------------------------------------------- */
+.slot-grid {
+  gap: 10px;
+}
+.time-slot {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  min-height: 46px;
+  padding: 12px 6px;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+.time-slot:not(:disabled) {
+  cursor: pointer;
+}
+.time-slot:not(:disabled):hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+.time-slot.selected {
+  box-shadow: 0 8px 20px rgba(232, 117, 85, 0.35);
+  transform: translateY(-2px);
+}
+/* On phones, slots still keep a comfortable 44px touch target. */
+@media (max-width: 560px) {
+  .slot-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .time-slot {
+    min-height: 50px;
+    padding: 12px 4px;
+  }
+  .time-slot small {
+    font-size: 10px;
+  }
+}
+
+/* ---- Tables ------------------------------------------------------------- */
+.table-wrap {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.admin-table th {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.admin-table tbody tr {
+  transition: background 0.16s var(--ease);
+}
+.admin-table tbody tr:hover {
+  background: rgba(220, 235, 226, 0.4);
+}
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Row action buttons: compact pill hover. */
+.row-actions button,
+.row-link {
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+.row-link:hover,
+.row-actions button:hover {
+  background: var(--mint);
+}
+
+/* ---- Calendar ----------------------------------------------------------- */
+.admin-calendar-grid {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.calendar-corner,
+.calendar-court-head {
+  font-weight: 700;
+}
+.admin-calendar-grid .time-slot {
+  border-radius: var(--radius-xs);
+  min-height: 44px;
+}
+
+/* ---- Filters ------------------------------------------------------------ */
+.admin-filters {
+  border-radius: var(--radius-lg);
+}
+.admin-filters input,
+.admin-filters select {
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Badges / status ---------------------------------------------------- */
+.status {
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 5px 11px;
+}
+.booking-source {
+  border-radius: var(--radius-pill);
+}
+
+/* ---- Result counts / kickers -------------------------------------------- */
+.result-count,
+.admin-kicker {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+} /* =========================================================================
+   RESPONSIVE & TOUCH — kill mobile overflow, fix sizing/scroll/tap targets
+   ========================================================================= */
+
+/* Every grid/flex child may shrink instead of forcing a horizontal scroll. */
+.admin-page,
+.customer-content,
+.public-page,
+.page-wrap,
+.book-page,
+.dashboard-page,
+.auth-panel,
+.main-content {
+  max-width: 100%;
+}
+
+/* Long words / refs / emails must not blow out table cells or cards. */
+.admin-table td,
+.customer-name,
+.manage-booking-reference,
+.booking-reference strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Tables collapse into labelled cards on phones — make that comfortable. */
+@media (max-width: 720px) {
+  .admin-table thead {
+    display: none;
+  }
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+  .admin-table tr {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+  }
+  .admin-table td {
+    align-items: center;
+    border: 0;
+    display: flex;
+    gap: var(--space-3);
+    justify-content: space-between;
+    padding: 9px 0;
+    text-align: right;
+  }
+  .admin-table td + td {
+    border-top: 1px solid var(--line);
+  }
+  .admin-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .admin-table td.table-action-cell {
+    justify-content: flex-end;
+  }
+  .table-wrap {
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
+
+/* Filters wrap cleanly and inputs go full-width on small screens. */
+@media (max-width: 640px) {
+  .admin-filters {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: 1fr;
+  }
+  .admin-filters input,
+  .admin-filters select,
+  .admin-filters .button {
+    width: 100%;
+  }
+  .admin-page-heading {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+}
+
+/* Comfortable touch targets on touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  .button,
+  .nav-toggle,
+  .time-slot,
+  .row-actions button,
+  .row-link,
+  .public-nav a {
+    min-height: 44px;
+  }
+  .admin-table td {
+    padding: 12px 0;
+  }
+}
+
+/* Sticky elements account for the safe area / header height. */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .admin-sidebar,
+  .customer-sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent iOS zoom-on-focus by keeping form text ≥16px on phones. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Landing / marketing sections breathe more consistently. */
+@media (max-width: 560px) {
+  .home-hero {
+    min-height: auto;
+    margin-bottom: var(--space-7);
+  }
+  .book-page,
+  .page-wrap {
+    padding-left: clamp(16px, 5vw, 35px);
+    padding-right: clamp(16px, 5vw, 35px);
+  }
+}
+
+/* =========================================================================
+   DASHBOARDS — consistent spacing, headings and section rhythm
+   ========================================================================= */
+.admin-page,
+.dashboard-page {
+  gap: var(--space-5);
+}
+.admin-section {
+  box-shadow: var(--shadow-sm);
+}
+.admin-page-heading h2,
+.dashboard-heading h1 {
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-1);
+}
+
+/* Reduced motion: honour the user's preference for the new animations too. */
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal-backdrop,
+  .topbar-popover,
+  .court-option,
+  .managed-court-card {
+    animation: none !important;
+    transition: none !important;
+  }
+} /* Route-level loading (ProtectedRoute / AdminRoute) fills the viewport so a
+   deep-link refresh shows a centred spinner instead of a stray line of text. */
+.route-loading {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 60vh;
+}
+.ui-loading.ui-page-loader {
+  min-height: 60vh;
+}
+/* When Loading is the direct route child, give it full-height centring. */
+body > #root > .ui-loading {
+  min-height: 70vh;
+}
+
+/* ---- Auth pages: centre the panel on all sizes ------------------------- */
+.auth-page {
+  min-height: 100dvh;
+}
+@media (max-width: 900px) {
+  .auth-art {
+    display: none;
+  }
+} /* iOS zoom-on-focus fix: any focused field must render at ≥16px on phones.
+   These selectors intentionally out-specify the base form rules (which use
+   .auth-panel / .modal scoping) so the fix actually applies. */
+@media (max-width: 640px) {
+  .auth-panel .form-card input,
+  .auth-panel .form-card select,
+  .modal .form-card input,
+  .modal .form-card select,
+  .manage-booking-lookup .form-card input,
+  .form-card select,
+  .form-card textarea,
+  .admin-filters input,
+  .admin-filters select,
+  .date-field input,
+  .duration-field select,
+  .booking-controls input,
+  .booking-controls select {
+    font-size: 16px;
+  }
+}

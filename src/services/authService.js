@@ -25,7 +25,7 @@ export async function getProfile(userId) {
   if (!userId) return null;
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, full_name, email, phone, role, created_at, updated_at")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -94,8 +94,37 @@ export async function requestPasswordReset(email) {
 
 export async function updatePassword(newPassword) {
   assertSupabase();
+  if (String(newPassword || "").length < 8) {
+    throw new Error("Password must be at least 8 characters long.");
+  }
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
+}
+
+/**
+ * Re-authenticate the CURRENT user with their existing password before a
+ * sensitive change (password change). A live session alone must not be enough
+ * to change the password — a hijacked/unlocked session would otherwise be
+ * able to lock the real owner out.
+ *
+ * Resolves silently on success; throws a friendly error on a wrong password so
+ * the caller can surface "Current password is incorrect".
+ */
+export async function verifyPassword(password) {
+  assertSupabase();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user?.email) throw new Error("You must be signed in to do that.");
+  const { error } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: String(password || ""),
+  });
+  if (error) {
+    throw new Error("Current password is incorrect.");
+  }
 }
 
 export async function updateProfile({ fullName, phone }) {
@@ -106,7 +135,7 @@ export async function updateProfile({ fullName, phone }) {
     .from("profiles")
     .update({ full_name: fullName, phone })
     .eq("id", authData.user.id)
-    .select("*")
+    .select("id, full_name, email, phone, role, created_at, updated_at")
     .single();
   if (error) throw error;
   return data;
@@ -118,6 +147,7 @@ export const authService = {
   signOut,
   requestPasswordReset,
   updatePassword,
+  verifyPassword,
   updateProfile,
   getProfile,
   toAppUser,

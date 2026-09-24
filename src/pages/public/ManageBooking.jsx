@@ -296,7 +296,7 @@ export function ManageBooking() {
               <input
                 value={reference}
                 onChange={(event) => setReference(event.target.value)}
-                placeholder="RB-260923-001"
+                placeholder="RB-260923-001-A1B2"
                 required
               />
             </label>

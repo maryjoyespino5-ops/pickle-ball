@@ -20,7 +20,7 @@ const emptySettings = {
 };
 
 export function Settings() {
-  const { user } = useAuth();
+  const { user, verifyPassword } = useAuth();
   const { locked, refresh } = useSubscriptionLock();
   const [values, setValues] = useState({
     ...emptySettings,
@@ -76,6 +76,10 @@ export function Settings() {
       setError("New password must be at least 8 characters long.");
       return;
     }
+    if (values.newPassword && !values.currentPassword) {
+      setError("Enter your current password to change it.");
+      return;
+    }
     if (values.opening && values.closing && values.opening >= values.closing) {
       setError("Opening time must be earlier than closing time.");
       return;
@@ -93,6 +97,9 @@ export function Settings() {
         });
       }
       if (values.newPassword) {
+        // Require the current password before changing it — a live session
+        // alone must not be enough (H1).
+        await verifyPassword(values.currentPassword);
         await authService.updatePassword(values.newPassword);
         update("newPassword", "");
         update("confirmPassword", "");

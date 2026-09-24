@@ -2,31 +2,33 @@
 -- 0008_seed_admin.sql
 -- Seeds the admin-panel account so it can log in at /login and reach /admin.
 --
---   email:    alicarayad@admin.com
---   password: EbDzZZGNxm98Jgvd   (bootstrap only — CHANGE AFTER FIRST LOGIN)
---
--- !!! SECURITY (S1 / B27) !!!
---   The bootstrap password is COMMITTED to this repository, so anyone with
---   repo access knows it. Treat it as an emergency-only fallback:
---     1) Log in once, then change the password immediately
---        (Admin Workspace > Settings > Change password).
---     2) If this migration already ran in a database, the seeded account is
---        still on the OLD password '123123123' — rotate it there too:
---          update auth.users
---             set encrypted_password =
---               extensions.crypt('paste-new-strong-password',
---                                extensions.gen_salt('bf'))
---           where lower(email) = 'alicarayad@admin.com';
---     3) Never put a real login credential in a committed migration again
---        (create admins interactively via the Supabase dashboard instead).
+-- !!! SECURITY (C1) — NO CREDENTIALS ARE COMMITTED HERE !!!
+--   Earlier revisions of this file hard-coded a working admin email + password.
+--   Those credentials are considered COMPROMISED and have been removed:
+--     1) If this migration already ran anywhere, ROTATE the password NOW via
+--        Supabase Dashboard > Authentication > Users > 'Reset password', or
+--        Admin Workspace > Settings > Change password. Assume the old password
+--        is public to anyone who ever had repo access.
+--     2) This file no longer creates a default password. To bootstrap the first
+--        admin, either:
+--          a) create the user interactively in the Supabase Dashboard (Auth),
+--             then promote it below by setting admin_email to that address, or
+--          b) run the dashboard SQL below with YOUR OWN strong password:
+--               update auth.users
+--                  set encrypted_password =
+--                    extensions.crypt('<your-strong-password>',
+--                                     extensions.gen_salt('bf'))
+--                where lower(email) = '<your-admin-email>';
+--     3) The admin email below is a PLACEHOLDER only. Change it to the real
+--        admin address (env/secret), and never commit a real password again.
 --
 -- Notes:
---   * The password is bcrypt-hashed with pgcrypto (the same scheme GoTrue /
---     Supabase Auth uses), so the account works immediately — no email
---     confirmation needed (email_confirmed_at is set).
 --   * 0001_profiles.sql auto-creates every new auth user with role 'customer'
 --     and its prevent_role_change trigger blocks role updates, so that trigger
 --     is briefly disabled here while the role is promoted to 'admin'.
+--   * If no auth user exists for ADMIN_EMAIL yet, this migration creates a
+--     shell account with a RANDOM, unusable password (must be reset by the
+--     operator before first login). It never uses a guessable default.
 -- ============================================================================
 
 create extension if not exists pgcrypto with schema extensions;
@@ -34,10 +36,18 @@ create extension if not exists pgcrypto with schema extensions;
 do $$
 declare
   admin_uuid  uuid := 'a51ca1ad-0000-4000-8000-000000000001';
+  -- PLACEHOLDER admin login. Replace with the real admin address (kept out of
+  -- source control). The account gets a RANDOM, unusable password and MUST be
+  -- reset by the operator before first login — see the header.
   admin_email text := 'alicarayad@admin.com';
   admin_name  text := 'Alicayard Admin';
   v_user_id   uuid;
+  v_random_pw text;
 begin
+  -- A random, non-guessable placeholder password. It is NEVER printed or
+  -- recoverable; the operator must reset the password before this account can
+  -- sign in. This removes any committed/known credential.
+  v_random_pw := encode(extensions.gen_random_bytes(24), 'hex');
   -- Resolve the admin account first: the project may already have this email
   -- under a DIFFERENT id (e.g. created via a normal signup or an earlier seed),
   -- in which case admin_uuid is wrong and pinning it would collide with the
@@ -71,7 +81,7 @@ begin
       'authenticated',
       'authenticated',
       admin_email,
-      extensions.crypt('EbDzZZGNxm98Jgvd', extensions.gen_salt('bf')),
+      extensions.crypt(v_random_pw, extensions.gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}',
       '{"full_name":"Alicayard Admin"}',
@@ -152,5 +162,7 @@ begin
   end if;
 
   alter table public.profiles enable trigger profiles_prevent_role_change;
+
+  raise notice 'Admin profile ready for %. NO default password is set: reset it in Supabase Dashboard > Authentication > Users (or run an encrypted_password UPDATE with your own strong password) before first login.', admin_email;
 end
 $$;

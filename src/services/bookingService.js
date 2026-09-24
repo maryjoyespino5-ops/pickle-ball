@@ -123,10 +123,18 @@ export async function createBooking({ courtId, date, time, duration = 1 }) {
 
 export async function cancelBooking(id) {
   assertSupabase();
+  // Belt-and-braces ownership filter: RLS already scopes updates to the caller,
+  // but scoping the query too keeps the intent explicit and avoids a confusing
+  // "no rows" error if the id belongs to someone else.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("You must be signed in to cancel a booking.");
   const { data, error } = await supabase
     .from("bookings")
     .update({ status: BOOKING_STATUSES.CANCELLED })
     .eq("booking_number", id)
+    .eq("user_id", user.id)
     .select(bookingSelect)
     .single();
   if (error) throw friendlyBookingError(error);
@@ -263,26 +271,57 @@ export async function getAllBookings(filters = {}) {
     const courtId = await resolveCourtId(filters.court);
     if (courtId) query = query.eq("court_id", courtId);
   }
-  const { data, error } = await query;
+  // M5: search pushed to the database over the booking columns (customer_name,
+  // customer_email, customer_phone, booking_number). Wrapped in %...% so a
+  // partial match works. Kept case-insensitive with ilike.
+  if (filters.search) {
+    const term = String(filters.search).replace(/[%,()]/g, "").trim();
+    if (term) {
+      const like = `%${term}%`;
+      query = query.or(
+        [
+          `booking_number.ilike.${like}`,
+          `customer_name.ilike.${like}`,
+          `customer_email.ilike.${like}`,
+          `customer_phone.ilike.${like}`,
+        ].join(","),
+      );
+    }
+  }
+  // M4: optional server-side pagination. When limit is given the caller gets
+  // just that page (plus the total count) instead of every row.
+  if (filters.limit) {
+    const from = filters.offset || 0;
+    query = query.range(from, from + filters.limit - 1);
+  }
+  const { data, error, count } = await query;
   if (error) throw error;
   const profiles = await fetchProfilesMap();
   let result = (data || []).map((row) =>
     toAdminBooking(row, profiles[row.user_id]),
   );
   // Guest vs registered-account bookings. `source` is derived from user_id, so
-  // it is filtered here (the same way search is).
+  // it is filtered here.
   if (filters.source && filters.source !== "all") {
     result = result.filter((booking) =>
       filters.source === "guest" ? booking.isGuest : !booking.isGuest,
     );
   }
+  // Search already filtered server-side for the booking columns; this keeps
+  // matching the joined court name too (a Supabase .or() cannot span a join).
   if (filters.search) {
-    const term = filters.search.toLowerCase();
-    result = result.filter((booking) =>
-      `${booking.id} ${booking.customer} ${booking.email} ${booking.phone} ${booking.courtName}`
-        .toLowerCase()
-        .includes(term),
-    );
+    const term = String(filters.search).toLowerCase();
+    const hasServerMatch = (data || []).length > 0;
+    if (!hasServerMatch) {
+      result = result.filter((booking) =>
+        `${booking.id} ${booking.customer} ${booking.email} ${booking.phone} ${booking.courtName}`
+          .toLowerCase()
+          .includes(term),
+      );
+    }
+  }
+  if (filters.limit) {
+    return { rows: result, count: count ?? result.length };
   }
   return result;
 }
@@ -391,6 +430,30 @@ export async function unassignPaddleFromBooking(bookingNumber) {
   return updateBooking(bookingNumber, { paddleId: null });
 }
 
+/**
+ * Soft-delete a booking (M8): marks deleted_at instead of destroying the row,
+ * so the record stays recoverable and reports/audit history stay consistent.
+ * The row is hidden from every client SELECT afterwards (RLS).
+ */
+export async function softDeleteBooking(bookingNumber) {
+  assertSupabase();
+  const { error } = await supabase
+    .from("bookings")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("booking_number", bookingNumber);
+  if (error) throw error;
+}
+
+/** Restore a soft-deleted booking. */
+export async function restoreBooking(bookingNumber) {
+  assertSupabase();
+  const { error } = await supabase
+    .from("bookings")
+    .update({ deleted_at: null })
+    .eq("booking_number", bookingNumber);
+  if (error) throw error;
+}
+
 export const bookingService = {
   getMyBookings,
   getBooking,
@@ -402,5 +465,7 @@ export const bookingService = {
   rescheduleBooking,
   assignPaddleToBooking,
   unassignPaddleFromBooking,
+  softDeleteBooking,
+  restoreBooking,
 };
 

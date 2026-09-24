@@ -9,26 +9,16 @@ function assertSupabase() {
 }
 
 async function fetchCustomerStats() {
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("user_id, booking_date, amount, status, payment_status");
+  // M3: server-side aggregation — one row per customer, not every booking.
+  const { data, error } = await supabase.rpc("customer_stats");
   if (error) throw error;
   const stats = {};
-  (data || []).forEach((booking) => {
-    const entry = stats[booking.user_id] || {
-      totalBookings: 0,
-      totalSpent: 0,
-      lastBooking: null,
+  (data || []).forEach((row) => {
+    stats[row.user_id] = {
+      totalBookings: Number(row.total_bookings) || 0,
+      totalSpent: Number(row.total_spent) || 0,
+      lastBooking: row.last_booking || null,
     };
-    if (booking.status !== "cancelled") entry.totalBookings += 1;
-    if (booking.payment_status === "paid")
-      entry.totalSpent += Number(booking.amount);
-    if (
-      booking.booking_date &&
-      (!entry.lastBooking || booking.booking_date > entry.lastBooking)
-    )
-      entry.lastBooking = booking.booking_date;
-    stats[booking.user_id] = entry;
   });
   return stats;
 }
@@ -40,17 +30,26 @@ async function fetchCustomerStats() {
 
 export async function getCustomers(search = "") {
   assertSupabase();
+  const term = String(search || "").replace(/[%,()]/g, "").trim();
+  // M5: push the search onto the profiles query instead of filtering in JS.
+  let profilesQuery = supabase
+    .from("profiles")
+    .select("id, full_name, email, phone, role")
+    .eq("role", "customer")
+    .order("created_at", { ascending: false });
+  if (term) {
+    const like = `%${term}%`;
+    profilesQuery = profilesQuery.or(
+      `full_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`,
+    );
+  }
   const [{ data: profiles, error: profilesError }, stats] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, full_name, email, phone, role")
-      .eq("role", "customer")
-      .order("created_at", { ascending: false }),
+    profilesQuery,
     fetchCustomerStats(),
   ]);
   if (profilesError) throw profilesError;
 
-  const customers = (profiles || []).map((profile) => ({
+  return (profiles || []).map((profile) => ({
     id: profile.id,
     name: profile.full_name || profile.email,
     email: profile.email,
@@ -60,14 +59,6 @@ export async function getCustomers(search = "") {
     lastBooking: stats[profile.id]?.lastBooking || "—",
     status: (stats[profile.id]?.totalBookings || 0) > 0 ? "active" : "inactive",
   }));
-
-  const term = search.toLowerCase();
-  if (!term) return customers;
-  return customers.filter((customer) =>
-    `${customer.name} ${customer.email} ${customer.phone}`
-      .toLowerCase()
-      .includes(term),
-  );
 }
 
 export async function getCustomer(id) {

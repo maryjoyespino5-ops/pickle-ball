@@ -30,7 +30,9 @@ export async function getFacilitySettings() {
   assertSupabase();
   const { data, error } = await supabase
     .from("facility_settings")
-    .select("*")
+    .select(
+      "facility_name, address, contact, facility_email, opening_time, closing_time, default_duration, max_duration",
+    )
     .limit(1)
     .maybeSingle();
   if (error) throw error;
@@ -53,7 +55,9 @@ export async function updateFacilitySettings(values) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", true)
-    .select("*")
+    .select(
+      "facility_name, address, contact, facility_email, opening_time, closing_time, default_duration, max_duration",
+    )
     .single();
   if (error) throw error;
   return toAppSettings(data);

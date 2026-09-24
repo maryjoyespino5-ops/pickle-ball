@@ -2,6 +2,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { AppRoutes } from "./routes/AppRoutes";
 
 function App() {
@@ -10,7 +11,9 @@ function App() {
       <SubscriptionProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <AppRoutes />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
         </BrowserRouter>
       </SubscriptionProvider>
     </AuthProvider>

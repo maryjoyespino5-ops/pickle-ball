@@ -118,6 +118,12 @@ export function AuthProvider({ children }) {
     return authService.updatePassword(newPassword);
   }
 
+  /** Re-authenticate the current user (password change guard). */
+  async function verifyPassword(password) {
+    assertConfigured();
+    return authService.verifyPassword(password);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -129,6 +135,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         updateProfile,
         updatePassword,
+        verifyPassword,
       }}>
       {children}
     </AuthContext.Provider>
