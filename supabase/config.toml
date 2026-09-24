@@ -1,1 +1,8 @@
 project_id = "pickleball-booking"
+
+# PayMongo webhook: PayMongo cannot send a Supabase JWT, so JWT verification is
+# disabled for this one function. Requests are instead authenticated by the
+# PayMongo HMAC signature, checked inside the function (see
+# supabase/functions/paymongo-webhook/index.ts).
+[functions.paymongo-webhook]
+verify_jwt = false

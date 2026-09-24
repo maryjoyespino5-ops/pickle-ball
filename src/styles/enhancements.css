@@ -981,3 +981,24 @@ body > #root > .ui-loading {
     font-size: 16px;
   }
 }
+/* =========================================================================
+   Subscription / renewal — PayMongo renewal call-to-action
+   ========================================================================= */
+.renewal-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+.renewal-cta .button {
+  flex: 0 1 auto;
+}
+@media (max-width: 560px) {
+  .renewal-cta {
+    flex-direction: column;
+  }
+  .renewal-cta .button {
+    justify-content: center;
+    width: 100%;
+  }
+}

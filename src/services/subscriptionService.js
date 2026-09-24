@@ -8,8 +8,24 @@ function assertSupabase() {
   }
 }
 
-export const SUBSCRIPTION_FEE = 900;
+export const SUBSCRIPTION_FEE = 999;
 export const SUBSCRIPTION_PERIOD_DAYS = 30;
+
+/**
+ * PayMongo Payment Link for the monthly license (₱999). Opening this link is
+ * the ONLY browser-side action — the license is renewed exclusively by the
+ * verified PayMongo webhook, so a frontend success message can never unlock
+ * anything. The link is public; the PayMongo secret key stays server-side.
+ */
+export const PAYMONO_PAYMENT_LINK = String(
+  import.meta.env.VITE_PAYMONO_PAYMENT_LINK ||
+    "https://pm.link/org-k48NqbsmRhyB2a8HEyXdc9Wj/OqqZPix",
+).trim();
+
+/** True when a PayMongo payment link is configured. */
+export function hasPaymongoLink() {
+  return /^https?:\/\//.test(PAYMONO_PAYMENT_LINK);
+}
 
 /** True when a Supabase error came from the expired-license write guard. */
 export function isSubscriptionExpiredError(error) {
@@ -112,6 +128,8 @@ export async function getSubscriptionEvents() {
 export const subscriptionService = {
   SUBSCRIPTION_FEE,
   SUBSCRIPTION_PERIOD_DAYS,
+  PAYMONO_PAYMENT_LINK,
+  hasPaymongoLink,
   isSubscriptionExpiredError,
   subscriptionErrorMessage,
   customerSubscriptionMessage,

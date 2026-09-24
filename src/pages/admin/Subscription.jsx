@@ -6,10 +6,10 @@ import { formatCurrency } from "../../utils/currencyUtils";
 import { formatDate } from "../../utils/dateUtils";
 
 const RENEWAL_STEPS = [
-  "Contact your software provider to pay the ₱900 monthly license fee (GCash / bank transfer / cash).",
-  "Share your payment reference (screenshot or transaction ID) with the provider.",
-  "The provider records the payment in Supabase (service-role only) — your license extends 30 days.",
-  "Return here and press Re-check license — the status flips to Active automatically.",
+  "Click Renew for ₱999 — you are taken to PayMongo's secure checkout (GCash, card, or bank).",
+  "Complete the ₱999 payment. Keep the PayMongo receipt for your records.",
+  "PayMongo notifies this app automatically once the payment is verified — no manual recording needed.",
+  "Come back here and press Re-check license. It flips to Active the moment the payment is confirmed.",
 ];
 
 function formatDateTime(value) {
@@ -73,6 +73,30 @@ export function Subscription() {
   };
 
   const expired = license && !license.isActive;
+  const monthlyFee = license?.monthlyFee ?? subscriptionService.SUBSCRIPTION_FEE;
+
+  /**
+   * Open the PayMongo Payment Link in a new tab. We deliberately do NOT mark
+   * the license active here — only the verified PayMongo webhook renews it, so
+   * a frontend click can never unlock anything. The user returns and presses
+   * "Re-check license".
+   */
+  const renewNow = () => {
+    if (!subscriptionService.hasPaymongoLink()) {
+      setError(
+        "The PayMongo renewal link is not configured. Contact your software provider.",
+      );
+      return;
+    }
+    window.open(
+      subscriptionService.PAYMONO_PAYMENT_LINK,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setNotice(
+      "PayMongo opened in a new tab. Once your ₱999 payment is verified, press Re-check license.",
+    );
+  };
 
   return (
     <div className="admin-page">
@@ -80,7 +104,7 @@ export function Subscription() {
         <div>
           <span className="admin-kicker">SOFTWARE LICENSE</span>
           <h2>Subscription</h2>
-          <p>Monthly license for this booking system — ₱900 every 30 days.</p>
+          <p>Monthly license for this booking system — {formatCurrency(monthlyFee)} every 30 days.</p>
         </div>
         <button className="button outline" type="button" onClick={recheck} disabled={checking || loading}>
           {checking ? "Checking..." : "Re-check license"}
@@ -99,9 +123,24 @@ export function Subscription() {
           </div>
           <div className="renewal-fee">
             <span>Monthly fee</span>
-            <strong>{formatCurrency(license?.monthlyFee ?? 900)}</strong>
+            <strong>{formatCurrency(monthlyFee)}</strong>
           </div>
         </section>
+      )}
+
+      {expired && (
+        <div className="renewal-cta">
+          <button className="button" type="button" onClick={renewNow}>
+            Renew for {formatCurrency(monthlyFee)} <span aria-hidden="true">-&gt;</span>
+          </button>
+          <button
+            className="button outline"
+            type="button"
+            onClick={recheck}
+            disabled={checking || loading}>
+            {checking ? "Checking..." : "I have paid — Re-check license"}
+          </button>
+        </div>
       )}
 
       {error && <ErrorMessage message={error} />}
