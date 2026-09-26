@@ -15,3 +15,4 @@ testout.txt
 # service-role key. Deliberately not committed: it must never sit in the repo
 # one command away from mutating production rows.
 scripts/live-payment-check.mjs
+scripts/check-report-math.mjs

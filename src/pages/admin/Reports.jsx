@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { reportService } from "../../services/reportService";
+import { RevenueTrendChart } from "../../components/reports/RevenueTrendChart";
+import { DemandHeatmap } from "../../components/reports/DemandHeatmap";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { debounce } from "../../utils/debounce";
 import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
@@ -167,6 +169,61 @@ export function Reports() {
       <section className="report-section">
         <div className="admin-section-heading">
           <div>
+            <span className="admin-kicker">COLLECTION GAP</span>
+            <h3>Money booked vs money collected</h3>
+          </div>
+        </div>
+        {/* The gap in one sentence, so the owner does not have to read the chart
+            to know whether money is missing. */}
+        <div className="gap-summary">
+          <div>
+            <span>Booked value</span>
+            <strong>{formatCurrency(report.bookedRevenue)}</strong>
+          </div>
+          <div>
+            <span>Collected</span>
+            <strong className="gap-good">{formatCurrency(report.collectedTotal)}</strong>
+          </div>
+          <div>
+            <span>Still outstanding</span>
+            <strong className={report.outstandingTotal > 0 ? "gap-warn" : "gap-good"}>
+              {formatCurrency(report.outstandingTotal)}
+            </strong>
+          </div>
+          <div>
+            <span>Collection rate</span>
+            <strong>{report.collectionRate}%</strong>
+          </div>
+        </div>
+        <p className="gap-callout">
+          {report.outstandingTotal > 0
+            ? `${formatCurrency(
+                report.outstandingTotal,
+              )} of booked court time has not been paid for yet. Marking a cart
+              paid at the counter, or a GCash payment settling, closes this gap.`
+            : "Every peso of booked court time in this range has been paid. Nothing outstanding."}
+        </p>
+        <RevenueTrendChart data={report.revenueTrend} />
+      </section>
+
+      <section className="report-section">
+        <div className="admin-section-heading">
+          <div>
+            <span className="admin-kicker">WHEN COURTS SELL</span>
+            <h3>Demand by hour and weekday</h3>
+          </div>
+        </div>
+        <DemandHeatmap
+          hours={report.hourlyDemand}
+          max={report.hourMax}
+          weekdays={report.weekdayLoad}
+          weekdayMax={report.weekdayMax}
+        />
+      </section>
+
+      <section className="report-section">
+        <div className="admin-section-heading">
+          <div>
             <span className="admin-kicker">BOOKING SUMMARY</span>
             <h3>Booking performance</h3>
           </div>
@@ -192,7 +249,19 @@ export function Reports() {
             <span>Pending</span>
             <strong>{report.pending}</strong>
           </div>
+          <div>
+            <span>Avg per booking</span>
+            <strong>{formatCurrency(report.avgPerBooking)}</strong>
+          </div>
         </div>
+        {report.cancelled > 0 && (
+          <p className="gap-callout gap-callout-muted">
+            {report.cancelled} cancelled booking
+            {report.cancelled === 1 ? "" : "s"} worth{" "}
+            {formatCurrency(report.cancelledRevenue)} of court time were given up
+            in this range.
+          </p>
+        )}
       </section>
       <section className="report-section">
         <div className="admin-section-heading">
@@ -225,9 +294,17 @@ export function Reports() {
             </div>
           </div>
           <div className="bar-chart">
+            {/* Scale against the real maximum. The old `count * 10` fudge pinned
+                every bar to full height as soon as a day hit 10 bookings, so the
+                chart flattened out exactly when the business got busy. */}
             {report.trend.map((item) => (
               <div className="bar-column" key={item.date}>
-                <span style={{ height: `${Math.min(item.count * 10, 100)}%` }} />
+                <span
+                  style={{
+                    height: `${Math.round((item.count / (report.trendMax || 1)) * 100)}%`,
+                  }}
+                  title={`${item.date} — ${item.count} booking${item.count === 1 ? "" : "s"}`}
+                />
                 <small>{weekdayLetter(item.date)}</small>
               </div>
             ))}

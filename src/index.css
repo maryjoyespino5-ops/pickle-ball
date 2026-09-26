@@ -2964,6 +2964,213 @@ select {
   gap: 18px;
   grid-template-columns: 1.2fr 0.8fr;
 }
+
+/* ---------------------------------------------------------------------------
+   Reports analytics: the collection-gap line chart and the demand heat strip.
+   Colours reuse the existing report palette (green #75ad88, amber #e8c55c,
+   muted #81968e, border #e2e9e3) so the new panels read as part of the same
+   screen rather than a bolted-on widget.
+   ------------------------------------------------------------------------ */
+.gap-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 14px;
+}
+.gap-summary > div {
+  background: #f7faf8;
+  border: 1px solid #e2e9e3;
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px;
+}
+.gap-summary span {
+  color: #81968e;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.gap-summary strong {
+  font-family: "Space Grotesk";
+  font-size: 20px;
+}
+.gap-good {
+  color: #2f7d4f;
+}
+.gap-warn {
+  color: #b3822a;
+}
+.gap-callout {
+  background: #fdf8ec;
+  border-left: 3px solid #e8c55c;
+  color: #5c6b63;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+  padding: 11px 14px;
+}
+.gap-callout-muted {
+  background: #f7faf8;
+  border-left-color: #cfdcd3;
+  margin: 14px 0 0;
+}
+.chart-empty {
+  color: #81968e;
+  font-size: 12px;
+  padding: 26px 0;
+  text-align: center;
+}
+
+/* --- Line chart --- */
+.trend-chart {
+  width: 100%;
+}
+.trend-svg {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 6px;
+}
+.chart-key {
+  align-items: center;
+  color: #5c6b63;
+  display: flex;
+  font-size: 11px;
+  gap: 7px;
+}
+.chart-key::before {
+  border-radius: 999px;
+  content: "";
+  height: 9px;
+  width: 9px;
+}
+.chart-key-collected::before {
+  background: #75ad88;
+}
+.chart-key-outstanding::before {
+  background: #e8c55c;
+}
+.chart-key strong {
+  font-family: "Space Grotesk";
+  font-size: 12px;
+}
+.chart-grid {
+  stroke: #e9efe9;
+  stroke-width: 1;
+}
+.chart-axis {
+  fill: #81968e;
+  font-size: 9px;
+}
+.chart-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.chart-line-collected {
+  stroke: #75ad88;
+}
+.chart-line-outstanding {
+  stroke: #e8c55c;
+  stroke-dasharray: 4 3;
+}
+.chart-area {
+  stroke: none;
+}
+.chart-area-collected {
+  fill: rgba(117, 173, 136, 0.16);
+}
+/* Outstanding sits behind, so it must not tint the collected area. */
+.chart-area-outstanding {
+  fill: rgba(232, 197, 92, 0.14);
+}
+.chart-dot {
+  stroke: #fff;
+  stroke-width: 1;
+}
+.chart-dot-collected {
+  fill: #75ad88;
+}
+.chart-dot-outstanding {
+  fill: #e8c55c;
+}
+.chart-dot:hover {
+  r: 4.5;
+}
+
+/* --- Demand heat strip --- */
+.demand-hours {
+  align-items: end;
+  display: flex;
+  gap: 6px;
+  height: 140px;
+  padding: 10px 0 0;
+}
+.demand-hour {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  height: 100%;
+  justify-content: end;
+  min-width: 0;
+}
+.demand-bar {
+  background: linear-gradient(#75ad88, #a8cdb4);
+  border-radius: 3px 3px 0 0;
+  display: block;
+  max-height: 100%;
+  min-height: 2px;
+  width: 100%;
+}
+.demand-hour small {
+  color: #81968e;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.demand-weekdays {
+  border-top: 1px solid #e9efe9;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+.demand-weekday {
+  align-items: center;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  position: relative;
+}
+.demand-weekday-fill {
+  background: #cfdcd3;
+  border-radius: 3px;
+  display: block;
+  height: 6px;
+  min-width: 3px;
+}
+.demand-weekday-label {
+  color: #81968e;
+  font-size: 10px;
+}
+.demand-weekday strong {
+  font-family: "Space Grotesk";
+  font-size: 12px;
+}
+.demand-note {
+  color: #81968e;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 16px 0 0;
+}
 .chart-card,
 .performance-card {
   background: #fff;
@@ -3279,6 +3486,16 @@ select {
   }
   .revenue-grid {
     grid-template-columns: 1fr;
+  }
+  /* The analytics panels collapse the same way: two-up, then one-up. */
+  .gap-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .demand-weekdays {
+    gap: 5px;
+  }
+  .demand-hour small {
+    font-size: 8px;
   }
   .details-grid {
     grid-template-columns: 1fr;
