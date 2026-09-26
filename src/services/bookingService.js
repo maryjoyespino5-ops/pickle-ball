@@ -81,10 +81,10 @@ function toAppBooking(row) {
     amount: Number(row.amount),
     status: row.status,
     paymentStatus: row.payment_status,
-    // How the money was collected, so My Bookings can say "Paid · GCash"
-    // instead of a bare "paid". Empty (not "Pay at Court") when unknown: the
-    // payment badge only renders once something is actually paid, and claiming a
-    // method for an unpaid booking would be a lie.
+    // How the money was collected, so the "Payment method" column can read
+    // "GCash" (paid online) or "Pay at Court" (cash at the desk). Empty (not
+    // "Pay at Court") when unknown: the method is shown as its own column, and
+    // naming a method for a booking with no payment row would be a lie.
     paymentMethod: payment?.method || "",
     // Derived flags so the player dashboard renders the settled state from one
     // place. Since 0029 a payment settles MONEY ONLY — bookings.status is left

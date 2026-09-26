@@ -144,8 +144,8 @@ describe("completePastBookings", () => {
 /**
  * The payment METHOD on a booking.
  *
- * A paid booking has to say how it was paid: "Paid · GCash" when the player paid
- * online, "Paid · Pay at Court" when an admin took cash at the desk.
+ * Method and status are reported separately — the table renders them as two
+ * columns, never a combined "Paid · GCash" cell.
  *
  * Both booking mappers used `row.payments?.[0]`, but PostgREST returns a
  * one-to-one embed (bookings -> payments) as a plain OBJECT, not an array. The

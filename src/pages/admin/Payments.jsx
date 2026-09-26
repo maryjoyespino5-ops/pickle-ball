@@ -221,11 +221,11 @@ export function Payments() {
                 <td data-label="Date">{payment.date}</td>
                 <td data-label="Amount">{formatCurrency(payment.amount)}</td>
                 <td data-label="Payment method">{payment.paymentMethod}</td>
+                {/* The "Payment method" column one cell to the left already says
+                    GCash or Pay at Court, so a "Paid · GCash" badge here just
+                    repeated it. The status column stays a clean status column. */}
                 <td data-label="Payment status">
-                  <PaymentStatus
-                    paymentStatus={payment.paymentStatus}
-                    paymentMethod={payment.paymentMethod}
-                  />
+                  <PaymentStatus paymentStatus={payment.paymentStatus} />
                 </td>
                 <td className="table-action-cell">
                   <div className="row-actions">
@@ -289,10 +289,7 @@ export function Payments() {
               {formatCurrency(selected.amount)}
               <span>{selected.paymentMethod}</span>
             </div>
-            <PaymentStatus
-              paymentStatus={selected.paymentStatus}
-              paymentMethod={selected.paymentMethod}
-            />
+            <PaymentStatus paymentStatus={selected.paymentStatus} />
           </div>
         </Modal>
       )}

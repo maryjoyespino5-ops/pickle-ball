@@ -173,9 +173,10 @@ describe("BookingTable pay action", () => {
     expect(screen.queryByText("paid")).toBeNull();
   });
 
-  // A paid booking can be paid two genuinely different ways, and the wording has
-  // to say which. These pin the exact strings the player sees.
-  it("names GCash when the player paid online", () => {
+  // Money and method are two independent facts and they get two COLUMNS. The
+  // old "Paid · GCash" badge repeated the method that already sits one cell
+  // away, so these pin the column split instead.
+  it("shows GCash in the method column and paid in the status column", () => {
     render(
       <BookingTable
         bookings={[
@@ -190,12 +191,15 @@ describe("BookingTable pay action", () => {
       />,
     );
     const row = screen.getByText("RB-6").closest("tr");
-    expect(within(row).getByText("Paid · GCash")).toBeTruthy();
-    // The status pill stays, so the column still reads as a status column.
-    expect(within(row).getByText("paid")).toBeTruthy();
+    const methodCell = row.querySelector('[data-label="Payment method"]');
+    const statusCell = row.querySelector('[data-label="Payment status"]');
+    expect(methodCell.textContent).toBe("GCash");
+    expect(statusCell.textContent).toBe("paid");
+    // The combined badge must not come back in any form.
+    expect(within(row).queryByText(/Paid\s*[·—-]/)).toBeNull();
   });
 
-  it("names Pay at Court when an admin recorded cash at the desk", () => {
+  it("shows Pay at Court when an admin recorded cash at the desk", () => {
     render(
       <BookingTable
         bookings={[
@@ -210,12 +214,13 @@ describe("BookingTable pay action", () => {
       />,
     );
     const row = screen.getByText("RB-7").closest("tr");
-    expect(within(row).getByText("Paid · Pay at Court")).toBeTruthy();
+    const methodCell = row.querySelector('[data-label="Payment method"]');
+    expect(methodCell.textContent).toBe("Pay at Court");
     // The two cases must never be collapsed into the same word.
-    expect(within(row).queryByText("Paid · GCash")).toBeNull();
+    expect(within(row).queryByText("GCash")).toBeNull();
   });
 
-  it("claims no method while the payment is still pending", () => {
+  it("keeps the status column free of any method claim while pending", () => {
     render(
       <BookingTable
         bookings={[
@@ -231,14 +236,12 @@ describe("BookingTable pay action", () => {
       />,
     );
     const row = screen.getByText("RB-8").closest("tr");
-    // Nothing has been collected, so no "Paid · ..." badge may appear.
-    expect(within(row).queryByText(/^Paid ·/)).toBeNull();
     // Scope to the payment cell by its data-label: the booking-status column
     // also reads "pending", so a bare text query would match both.
-    const paymentCell = row.querySelector('[data-label="Payment status"]');
-    expect(paymentCell).toBeTruthy();
-    expect(paymentCell.textContent).toContain("pending");
-    expect(paymentCell.textContent).not.toContain("GCash");
+    const statusCell = row.querySelector('[data-label="Payment status"]');
+    expect(statusCell.textContent).toBe("pending");
+    expect(statusCell.textContent).not.toContain("GCash");
+    expect(within(row).queryByText(/Paid\s*[·—-]/)).toBeNull();
   });
 });
 
@@ -283,16 +286,15 @@ describe("ManageBooking GCash step", () => {
     vi.spyOn(guestBookingService, "getGuestBooking").mockResolvedValue({
       ...guestBooking,
       paymentStatus: "paid",
-      // 0023: the RPC returns the settled method, so the page names HOW it was
-      // paid ("Paid · GCash") instead of a static label. The separator is the
-      // same middot every other view uses, so the wording is identical on the
-      // guest page, the player tables and the admin tables.
+      // 0023: the RPC returns the settled method, so the page shows the method
+      // ("GCash") alongside the status ("paid") as two separate facts, the same
+      // split the booking tables use.
       paymentMethod: "GCash",
       isPaid: true,
       isConfirmed: true,
     });
     renderPage();
-    expect(await screen.findByText("Paid · GCash")).toBeTruthy();
+    expect(await screen.findByText("GCash")).toBeTruthy();
     expect(
       screen.getByText(/Booking confirmed · Payment received/),
     ).toBeTruthy();

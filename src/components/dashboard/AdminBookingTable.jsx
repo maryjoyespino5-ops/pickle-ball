@@ -23,6 +23,7 @@ export function AdminBookingTable({
             <th>Amount</th>
             <th>Booking status</th>
             <th>Payment status</th>
+            <th>Payment method</th>
             <th />
           </tr>
         </thead>
@@ -56,18 +57,15 @@ export function AdminBookingTable({
                   {booking.status}
                 </span>
               </td>
-              {/* Payment status is its own column, read from the same
-                  payments row the player sees, so admin and player can never
-                  disagree about whether the money settled. The badge names HOW
-                  it was paid, which is what the owner needs to reconcile the
-                  day's takings: "Paid · GCash" (player paid online) versus
-                  "Paid · Pay at Court" (cash collected at the desk). */}
+              {/* Money and method are separate columns, never one crowded
+                  "Paid · GCash" cell: the status says whether it settled, the
+                  method says how. That is what the owner needs when
+                  reconciling the day's takings — a GCash payment and cash at
+                  the desk are different money. */}
               <td data-label="Payment status">
-                <PaymentStatus
-                  paymentStatus={booking.paymentStatus}
-                  paymentMethod={booking.paymentMethod}
-                />
+                <PaymentStatus paymentStatus={booking.paymentStatus} />
               </td>
+              <td data-label="Payment method">{booking.paymentMethod}</td>
               <td className="table-action-cell">
                 <div className="row-actions">
                   <button disabled={busy} onClick={() => onView(booking)}>

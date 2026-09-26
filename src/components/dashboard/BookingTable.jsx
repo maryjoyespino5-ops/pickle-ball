@@ -19,6 +19,7 @@ export function BookingTable({
             <th>Amount</th>
             <th>Booking status</th>
             <th>Payment status</th>
+            <th>Payment method</th>
             <th />
           </tr>
         </thead>
@@ -45,15 +46,13 @@ export function BookingTable({
               {/* Payment is deliberately its OWN column, separate from the
                   booking status above: paying settles the MONEY, not the game.
                   A GCash payment flips this to 'paid' while the booking stays
-                  'pending' until the slot is played. The badge underneath
-                  names how it was paid — "Paid · GCash" when the player paid
-                  online, "Paid · Pay at Court" when an admin took cash. */}
+                  'pending' until the slot is played. The method sits in its own
+                  column too — "GCash" (paid online) or "Pay at Court" (cash at
+                  the desk) — rather than a combined "Paid · GCash" cell. */}
               <td data-label="Payment status">
-                <PaymentStatus
-                  paymentStatus={booking.paymentStatus}
-                  paymentMethod={booking.paymentMethod}
-                />
+                <PaymentStatus paymentStatus={booking.paymentStatus} />
               </td>
+              <td data-label="Payment method">{booking.paymentMethod}</td>
               <td className="table-action-cell">
                 {CANCELLABLE_STATUSES.includes(booking.status) &&
                   booking.paymentStatus !== "paid" &&

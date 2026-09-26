@@ -40,13 +40,11 @@ export function BookingDetails({
         <div>
           <small>Payment</small>
           <strong>{formatCurrency(booking.amount)}</strong>
-          {/* The badge names how the money was collected, which is the whole
-              question when an owner is reconciling: "Paid · GCash" means the
-              player paid online, "Paid · Pay at Court" means cash at the desk. */}
-          <PaymentStatus
-            paymentStatus={booking.paymentStatus}
-            paymentMethod={booking.paymentMethod}
-          />
+          {/* Method and status are listed as separate facts, the same two
+              columns the tables use. No combined "Paid · GCash" badge: the
+              status says whether it settled, the method says how. */}
+          <span>{booking.paymentMethod}</span>
+          <PaymentStatus paymentStatus={booking.paymentStatus} />
         </div>
         <div>
           <small>Booking status</small>

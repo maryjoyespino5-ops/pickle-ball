@@ -287,14 +287,10 @@ export function ManageBooking() {
             <div>
               <small>Payment</small>
               <strong>{formatCurrency(booking.amount)}</strong>
-              {/* Same wording as every other view: a settled payment always
-                  names HOW it was paid, so a guest who paid GCash sees the
-                  same "Paid · GCash" the player and the owner see. */}
-              <span>
-                {booking.isPaid
-                  ? `Paid · ${booking.paymentMethod}`
-                  : "Pay online or at court"}
-              </span>
+              {/* Same two facts as the tables — method, then status — rather
+                  than a combined "Paid · GCash" line. A guest who paid GCash
+                  sees "GCash" in the method slot and "paid" in the status. */}
+              <span>{booking.paymentMethod}</span>
               <span className={`status status-${booking.paymentStatus}`}>
                 {booking.paymentStatus}
               </span>

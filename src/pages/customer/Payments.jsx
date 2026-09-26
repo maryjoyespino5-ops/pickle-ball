@@ -102,11 +102,11 @@ export function Payments() {
                       "—"
                     )}
                   </td>
+                  {/* The "Method" column one cell to the left already reads
+                      GCash or Pay at Court, so the old "Paid · GCash" badge
+                      only repeated it. */}
                   <td data-label="Payment status">
-                    <PaymentStatus
-                      paymentStatus={payment.status}
-                      paymentMethod={payment.method}
-                    />
+                    <PaymentStatus paymentStatus={payment.status} />
                   </td>
                 </tr>
               ))}
