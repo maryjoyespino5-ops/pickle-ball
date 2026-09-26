@@ -62,6 +62,12 @@ function toAppBooking(row) {
     amount: Number(row.amount),
     status: row.status,
     paymentStatus: row.payment_status,
+    // Derived flags so the player dashboard renders PAID + CONFIRMED from one
+    // place. A GCash payment sets payment_status='paid' and status='confirmed'
+    // in the same transaction (0021), so these two agree after a webhook
+    // confirmation or a reconciliation.
+    isPaid: row.payment_status === "paid",
+    isConfirmed: ["confirmed", "completed"].includes(row.status),
     createdAt: row.created_at,
   };
 }
@@ -221,6 +227,10 @@ function toAdminBooking(row, profile) {
     status: row.status,
     paymentStatus: row.payment_status,
     paymentMethod: row.payments?.[0]?.method || "Pay at Court",
+    // Admin-side derived flags: a booking paid online reads PAID + CONFIRMED
+    // in the admin tables without the page recomputing it.
+    isPaid: row.payment_status === "paid",
+    isConfirmed: ["confirmed", "completed"].includes(row.status),
     createdAt: row.created_at,
   };
 }

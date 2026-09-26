@@ -289,13 +289,18 @@ export function ManageBooking() {
               <small>Payment</small>
               <strong>{formatCurrency(booking.amount)}</strong>
               <span>
-                {booking.paymentStatus === "paid"
-                  ? "Paid — GCash / PayMongo"
+                {booking.isPaid
+                  ? `Paid — ${booking.paymentMethod}`
                   : "Pay online or at court"}
               </span>
               <span className={`status status-${booking.paymentStatus}`}>
                 {booking.paymentStatus}
               </span>
+              {booking.isPaid && booking.paymentReference && (
+                <span>
+                  Ref <code>{booking.paymentReference}</code>
+                </span>
+              )}
             </div>
             <div>
               <small>Booked on</small>
@@ -306,6 +311,16 @@ export function ManageBooking() {
 
           {notice && <div className="success-message">{notice}</div>}
           {error && <ErrorMessage message={error} />}
+
+          {/* Settlement banner: the authoritative PAID + CONFIRMED state after
+              the PayMongo webhook (or a reconciliation) commits. */}
+          {booking.isPaid && (
+            <div className="success-message">
+              <strong>Booking confirmed · Payment received</strong>. This booking
+              is marked PAID and CONFIRMED — show your reference at the front
+              desk when you arrive.
+            </div>
+          )}
 
           {/* GCash payment step — guests pay with the booking's secure token.
               Shown only while the booking is still unpaid and open. */}

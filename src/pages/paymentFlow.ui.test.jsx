@@ -120,6 +120,46 @@ describe("BookingTable pay action", () => {
     );
     expect(screen.queryByText("Pay with GCash")).toBeNull();
   });
+
+  it("shows Paid · Confirmed for a GCash-settled booking", () => {
+    render(
+      <BookingTable
+        bookings={[
+          {
+            ...base,
+            id: "RB-4",
+            status: "confirmed",
+            paymentStatus: "paid",
+            isPaid: true,
+            isConfirmed: true,
+          },
+        ]}
+        onPay={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Paid · Confirmed")).toBeTruthy();
+    // A settled booking offers no payment action.
+    expect(screen.queryByText("Pay with GCash")).toBeNull();
+  });
+
+  it("does not claim paid+confirmed while the booking is still unpaid", () => {
+    render(
+      <BookingTable
+        bookings={[
+          {
+            ...base,
+            id: "RB-5",
+            status: "upcoming",
+            paymentStatus: "pending",
+            isPaid: false,
+            isConfirmed: false,
+          },
+        ]}
+        onPay={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("Paid · Confirmed")).toBeNull();
+  });
 });
 
 describe("ManageBooking GCash step", () => {
@@ -163,9 +203,17 @@ describe("ManageBooking GCash step", () => {
     vi.spyOn(guestBookingService, "getGuestBooking").mockResolvedValue({
       ...guestBooking,
       paymentStatus: "paid",
+      // 0023: the RPC now returns the settled method, so the page renders
+      // "Paid — GCash" plus the confirmation banner instead of a static label.
+      paymentMethod: "GCash",
+      isPaid: true,
+      isConfirmed: true,
     });
     renderPage();
-    expect(await screen.findByText("Paid — GCash / PayMongo")).toBeTruthy();
+    expect(await screen.findByText("Paid — GCash")).toBeTruthy();
+    expect(
+      screen.getByText(/Booking confirmed · Payment received/),
+    ).toBeTruthy();
     expect(screen.queryByText(/Pay ₱600 with GCash/)).toBeNull();
   });
 

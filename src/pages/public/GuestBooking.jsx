@@ -300,6 +300,13 @@ export function GuestBooking({ embedded = false }) {
               <span>Payment</span>
               <strong>{formatCurrency(confirmation.amount)}</strong>
             </div>
+            <div className="summary-row">
+              <span>Status</span>
+              <strong>
+                {confirmation.isPaid ? "Paid" : "Pay at court"} ·{" "}
+                {confirmation.status}
+              </strong>
+            </div>
             {confirmation.token && (
               <div className="booking-payment-box">
                 <button

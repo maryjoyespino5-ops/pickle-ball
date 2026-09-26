@@ -37,6 +37,16 @@ export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) 
                 <small className="payment-status">
                   {booking.paymentStatus}
                 </small>
+                {/* A GCash-paid booking is PAID + CONFIRMED; surface both
+                    side by side so the player sees the settled state. */}
+                {booking.isPaid && booking.isConfirmed && (
+                  <>
+                    <br />
+                    <small className="payment-status paid-confirmed-badge">
+                      Paid · Confirmed
+                    </small>
+                  </>
+                )}
               </td>
               <td className="table-action-cell">
                 {["upcoming", "confirmed"].includes(booking.status) &&

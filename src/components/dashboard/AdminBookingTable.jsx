@@ -60,6 +60,18 @@ export function AdminBookingTable({
                 <span className={`status status-${booking.paymentStatus}`}>
                   {booking.paymentStatus}
                 </span>
+                {/* A GCash-paid booking is settled end to end: show the method
+                    alongside the PAID + CONFIRMED state, for guest bookings too
+                    (their payment row carries the PayMongo reference). */}
+                {booking.isPaid && booking.isConfirmed && (
+                  <>
+                    <br />
+                    <small className="payment-status paid-confirmed-badge">
+                      Paid · Confirmed
+                      {booking.paymentMethod ? ` · ${booking.paymentMethod}` : ""}
+                    </small>
+                  </>
+                )}
               </td>
               <td className="table-action-cell">
                 <div className="row-actions">

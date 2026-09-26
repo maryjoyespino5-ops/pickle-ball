@@ -57,6 +57,14 @@ function toGuestBooking(row) {
     amount: Number(row.amount) || 0,
     status: row.status,
     paymentStatus: row.payment_status,
+    // Settled payment details (0023): a GCash-paid booking reports
+    // method=GCash plus the PayMongo reference and the time it was paid, so the
+    // guest page can show PAID + CONFIRMED rather than a generic label.
+    paymentMethod: row.payment_method || "Pay at Court",
+    paymentReference: row.payment_reference || "",
+    paidAt: row.paid_at || null,
+    isPaid: row.payment_status === "paid",
+    isConfirmed: ["confirmed", "completed"].includes(row.status),
     customerName: row.customer_name || "",
     customerPhone: row.customer_phone || "",
     isClaimed: Boolean(row.is_claimed),
