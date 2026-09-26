@@ -1,6 +1,7 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { CANCELLABLE_STATUSES } from "../../lib/constants";
+import { PaymentStatus } from "../booking/PaymentStatus";
 export function BookingTable({
   bookings = [],
   onCancel,
@@ -44,11 +45,14 @@ export function BookingTable({
               {/* Payment is deliberately its OWN column, separate from the
                   booking status above: paying settles the MONEY, not the game.
                   A GCash payment flips this to 'paid' while the booking stays
-                  'pending' until the slot is played. */}
+                  'pending' until the slot is played. The badge underneath
+                  names how it was paid — "Paid · GCash" when the player paid
+                  online, "Paid · Pay at Court" when an admin took cash. */}
               <td data-label="Payment status">
-                <span className={`status status-${booking.paymentStatus}`}>
-                  {booking.paymentStatus}
-                </span>
+                <PaymentStatus
+                  paymentStatus={booking.paymentStatus}
+                  paymentMethod={booking.paymentMethod}
+                />
               </td>
               <td className="table-action-cell">
                 {CANCELLABLE_STATUSES.includes(booking.status) &&

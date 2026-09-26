@@ -287,9 +287,12 @@ export function ManageBooking() {
             <div>
               <small>Payment</small>
               <strong>{formatCurrency(booking.amount)}</strong>
+              {/* Same wording as every other view: a settled payment always
+                  names HOW it was paid, so a guest who paid GCash sees the
+                  same "Paid · GCash" the player and the owner see. */}
               <span>
                 {booking.isPaid
-                  ? `Paid — ${booking.paymentMethod}`
+                  ? `Paid · ${booking.paymentMethod}`
                   : "Pay online or at court"}
               </span>
               <span className={`status status-${booking.paymentStatus}`}>

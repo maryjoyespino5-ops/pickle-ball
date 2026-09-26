@@ -2,6 +2,7 @@
 import { Modal } from "../../components/common/Modal";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
+import { PaymentStatus } from "../../components/booking/PaymentStatus";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
@@ -221,9 +222,10 @@ export function Payments() {
                 <td data-label="Amount">{formatCurrency(payment.amount)}</td>
                 <td data-label="Payment method">{payment.paymentMethod}</td>
                 <td data-label="Payment status">
-                  <span className={`status status-${payment.paymentStatus}`}>
-                    {payment.paymentStatus}
-                  </span>
+                  <PaymentStatus
+                    paymentStatus={payment.paymentStatus}
+                    paymentMethod={payment.paymentMethod}
+                  />
                 </td>
                 <td className="table-action-cell">
                   <div className="row-actions">
@@ -287,9 +289,10 @@ export function Payments() {
               {formatCurrency(selected.amount)}
               <span>{selected.paymentMethod}</span>
             </div>
-            <span className={`status status-${selected.paymentStatus}`}>
-              {selected.paymentStatus}
-            </span>
+            <PaymentStatus
+              paymentStatus={selected.paymentStatus}
+              paymentMethod={selected.paymentMethod}
+            />
           </div>
         </Modal>
       )}

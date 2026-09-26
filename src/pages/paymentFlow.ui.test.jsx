@@ -172,6 +172,74 @@ describe("BookingTable pay action", () => {
     );
     expect(screen.queryByText("paid")).toBeNull();
   });
+
+  // A paid booking can be paid two genuinely different ways, and the wording has
+  // to say which. These pin the exact strings the player sees.
+  it("names GCash when the player paid online", () => {
+    render(
+      <BookingTable
+        bookings={[
+          {
+            ...base,
+            id: "RB-6",
+            paymentStatus: "paid",
+            paymentMethod: "GCash",
+            isPaid: true,
+          },
+        ]}
+      />,
+    );
+    const row = screen.getByText("RB-6").closest("tr");
+    expect(within(row).getByText("Paid · GCash")).toBeTruthy();
+    // The status pill stays, so the column still reads as a status column.
+    expect(within(row).getByText("paid")).toBeTruthy();
+  });
+
+  it("names Pay at Court when an admin recorded cash at the desk", () => {
+    render(
+      <BookingTable
+        bookings={[
+          {
+            ...base,
+            id: "RB-7",
+            paymentStatus: "paid",
+            paymentMethod: "Pay at Court",
+            isPaid: true,
+          },
+        ]}
+      />,
+    );
+    const row = screen.getByText("RB-7").closest("tr");
+    expect(within(row).getByText("Paid · Pay at Court")).toBeTruthy();
+    // The two cases must never be collapsed into the same word.
+    expect(within(row).queryByText("Paid · GCash")).toBeNull();
+  });
+
+  it("claims no method while the payment is still pending", () => {
+    render(
+      <BookingTable
+        bookings={[
+          {
+            ...base,
+            id: "RB-8",
+            paymentStatus: "pending",
+            paymentMethod: "GCash",
+            isPaid: false,
+          },
+        ]}
+        onPay={vi.fn()}
+      />,
+    );
+    const row = screen.getByText("RB-8").closest("tr");
+    // Nothing has been collected, so no "Paid · ..." badge may appear.
+    expect(within(row).queryByText(/^Paid ·/)).toBeNull();
+    // Scope to the payment cell by its data-label: the booking-status column
+    // also reads "pending", so a bare text query would match both.
+    const paymentCell = row.querySelector('[data-label="Payment status"]');
+    expect(paymentCell).toBeTruthy();
+    expect(paymentCell.textContent).toContain("pending");
+    expect(paymentCell.textContent).not.toContain("GCash");
+  });
 });
 
 describe("ManageBooking GCash step", () => {
@@ -215,14 +283,16 @@ describe("ManageBooking GCash step", () => {
     vi.spyOn(guestBookingService, "getGuestBooking").mockResolvedValue({
       ...guestBooking,
       paymentStatus: "paid",
-      // 0023: the RPC now returns the settled method, so the page renders
-      // "Paid — GCash" plus the confirmation banner instead of a static label.
+      // 0023: the RPC returns the settled method, so the page names HOW it was
+      // paid ("Paid · GCash") instead of a static label. The separator is the
+      // same middot every other view uses, so the wording is identical on the
+      // guest page, the player tables and the admin tables.
       paymentMethod: "GCash",
       isPaid: true,
       isConfirmed: true,
     });
     renderPage();
-    expect(await screen.findByText("Paid — GCash")).toBeTruthy();
+    expect(await screen.findByText("Paid · GCash")).toBeTruthy();
     expect(
       screen.getByText(/Booking confirmed · Payment received/),
     ).toBeTruthy();

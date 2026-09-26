@@ -1,5 +1,6 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12 } from "../../utils/dateUtils";
+import { PaymentStatus } from "./PaymentStatus";
 import {
   BOOKING_STATUSES,
   CANCELLABLE_STATUSES,
@@ -39,10 +40,13 @@ export function BookingDetails({
         <div>
           <small>Payment</small>
           <strong>{formatCurrency(booking.amount)}</strong>
-          <span>{booking.paymentMethod}</span>
-          <span className={`status status-${booking.paymentStatus}`}>
-            {booking.paymentStatus}
-          </span>
+          {/* The badge names how the money was collected, which is the whole
+              question when an owner is reconciling: "Paid · GCash" means the
+              player paid online, "Paid · Pay at Court" means cash at the desk. */}
+          <PaymentStatus
+            paymentStatus={booking.paymentStatus}
+            paymentMethod={booking.paymentMethod}
+          />
         </div>
         <div>
           <small>Booking status</small>

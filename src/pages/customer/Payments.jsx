@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
+import { PaymentStatus } from "../../components/booking/PaymentStatus";
 import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { formatCurrency } from "../../utils/currencyUtils";
@@ -102,9 +103,10 @@ export function Payments() {
                     )}
                   </td>
                   <td data-label="Payment status">
-                    <span className={`status status-${payment.status}`}>
-                      {payment.status}
-                    </span>
+                    <PaymentStatus
+                      paymentStatus={payment.status}
+                      paymentMethod={payment.method}
+                    />
                   </td>
                 </tr>
               ))}

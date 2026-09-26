@@ -1,6 +1,7 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { BOOKING_STATUSES, CANCELLABLE_STATUSES } from "../../lib/constants";
+import { PaymentStatus } from "../booking/PaymentStatus";
 export function AdminBookingTable({
   bookings = [],
   onView,
@@ -57,20 +58,15 @@ export function AdminBookingTable({
               </td>
               {/* Payment status is its own column, read from the same
                   payments row the player sees, so admin and player can never
-                  disagree about whether the money settled. */}
+                  disagree about whether the money settled. The badge names HOW
+                  it was paid, which is what the owner needs to reconcile the
+                  day's takings: "Paid · GCash" (player paid online) versus
+                  "Paid · Pay at Court" (cash collected at the desk). */}
               <td data-label="Payment status">
-                <span className={`status status-${booking.paymentStatus}`}>
-                  {booking.paymentStatus}
-                </span>
-                {booking.isPaid && (
-                  <>
-                    <br />
-                    <small className="payment-status paid-confirmed-badge">
-                      Paid
-                      {booking.paymentMethod ? ` · ${booking.paymentMethod}` : ""}
-                    </small>
-                  </>
-                )}
+                <PaymentStatus
+                  paymentStatus={booking.paymentStatus}
+                  paymentMethod={booking.paymentMethod}
+                />
               </td>
               <td className="table-action-cell">
                 <div className="row-actions">
