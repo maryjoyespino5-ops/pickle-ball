@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Modal } from "../../components/common/Modal";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
@@ -18,6 +18,7 @@ export function Payments() {
     date: "",
   });
   const [refundTarget, setRefundTarget] = useState(null);
+  const [reconcilingId, setReconcilingId] = useState("");
   const [actionError, setActionError] = useState("");
   const load = () => {
     setActionError("");
@@ -48,6 +49,51 @@ export function Payments() {
     } catch (err) {
       setActionError(subscriptionService.subscriptionErrorMessage(err, "Could not mark this payment as paid."));
       if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
+    }
+  };
+  /**
+   * Recover a booking whose money was collected by PayMongo but which the
+   * webhook never confirmed (the routing bug). This does NOT simply flip the
+   * status: it calls reconcile_booking_payment, which reuses the webhook's own
+   * atomic confirm path with its amount cross-check. Marking paid by hand stays
+   * available for genuine pay-at-court cash.
+   */
+  const reconcile = async (payment) => {
+    if (locked) {
+      setActionError(
+        "Your software license has expired. Renew the subscription to continue.",
+      );
+      refresh();
+      return;
+    }
+    setActionError("");
+    setReconcilingId(payment.bookingNumber);
+    try {
+      const result = await paymentService.reconcilePayment(
+        payment.bookingNumber,
+      );
+      if (result?.outcome === "amount_mismatch") {
+        setActionError(
+          `The amount PayMongo collected does not cover booking ${payment.bookingNumber}. Review it in the PayMongo dashboard.`,
+        );
+      } else if (result?.outcome === "not_found") {
+        setActionError(
+          `PayMongo has no matching payment for ${payment.bookingNumber}. Check the transaction in the PayMongo dashboard first.`,
+        );
+      } else {
+        // confirmed | duplicate — the RPC already reported the settled state.
+        load();
+      }
+    } catch (err) {
+      setActionError(
+        subscriptionService.subscriptionErrorMessage(
+          err,
+          "Could not reconcile this payment.",
+        ),
+      );
+      if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
+    } finally {
+      setReconcilingId("");
     }
   };
   const visible = payments.filter((payment) => {
@@ -177,6 +223,17 @@ export function Payments() {
                       Mark paid
                     </button>
                   )}
+                  {payment.paymentStatus === "pending" && !locked && (
+                    <button
+                      className="row-link"
+                      title="Confirm this booking from the PayMongo payment that was actually collected"
+                      disabled={reconcilingId === payment.bookingNumber}
+                      onClick={() => reconcile(payment)}>
+                      {reconcilingId === payment.bookingNumber
+                        ? "Checking..."
+                        : "Recover from PayMongo"}
+                    </button>
+                  )}
                   {payment.paymentStatus === "paid" && !locked && (
                     <button
                       className="row-link"
@@ -200,7 +257,7 @@ export function Payments() {
             <p>
               <strong>{selected.customer}</strong>
               <br />
-              {selected.courtName} · {selected.date} · {formatTime12(selected.time)}
+              {selected.courtName} Â· {selected.date} Â· {formatTime12(selected.time)}
             </p>
             <div className="payment-total">
               {formatCurrency(selected.amount)}

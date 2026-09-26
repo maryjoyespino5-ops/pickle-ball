@@ -97,4 +97,54 @@ export async function updatePayment(id, paymentStatus) {
   return toAppPayment(data, profiles);
 }
 
-export const paymentService = { getMyPayments, getPayments, updatePayment };
+/**
+ * Recover a booking whose PayMongo payment was collected but never confirmed
+ * (the webhook-routing bug). Unlike updatePayment this goes through the SAME
+ * database RPC the live webhook uses: confirm_booking_from_paymongo, via
+ * reconcile_booking_payment (0022). That means the amount is still cross-checked
+ * against the booking and payments.status/bookings.status commit atomically —
+ * the browser cannot force a booking to be paid.
+ *
+ * @param {string} bookingNumber the booking reference (RB-...)
+ * @param {object} [args]
+ * @param {string} [args.sessionRef] PayMongo cs_... session id
+ * @param {string} [args.paymentRef] PayMongo pay_... payment id
+ * @param {number} [args.amount]     amount PayMongo collected (pesos)
+ */
+export async function reconcilePayment(
+  bookingNumber,
+  { sessionRef = "", paymentRef = "", amount = null, method = "GCash" } = {},
+) {
+  assertSupabase();
+  if (!bookingNumber) throw new Error("A booking reference is required.");
+
+  const { data, error } = await supabase.rpc("reconcile_booking_payment", {
+    p_booking_number: bookingNumber,
+    p_event_id: null,
+    p_session_ref: sessionRef || null,
+    p_payment_ref: paymentRef || null,
+    p_amount: amount == null ? null : Number(amount),
+    p_method: method || "GCash",
+  });
+  if (error) throw error;
+
+  return Array.isArray(data) ? data[0] : data;
+}
+
+/** Admin audit list: bookings that reached PayMongo but still look unpaid. */
+export async function getStuckPayments() {
+  assertSupabase();
+  const { data, error } = await supabase.rpc("find_stuck_booking_payments", {
+    p_since: null,
+  });
+  if (error) throw error;
+  return data || [];
+}
+
+export const paymentService = {
+  getMyPayments,
+  getPayments,
+  updatePayment,
+  reconcilePayment,
+  getStuckPayments,
+};

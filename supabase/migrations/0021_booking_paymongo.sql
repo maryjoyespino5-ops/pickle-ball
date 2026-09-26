@@ -514,7 +514,7 @@ begin
 end;
 $$;
 
-comment on function public.begin_booking_paymongo_checkout(text) is
+comment on function public.begin_booking_paymongo_checkout(text, uuid, text) is
   'Service-role-only: resolves a booking to its server-computed amount and payment state before the paymongo-checkout Edge Function creates a Checkout Session. Refuses cancelled or already-paid bookings.';
 
 revoke all on function public.begin_booking_paymongo_checkout(text, uuid, text)

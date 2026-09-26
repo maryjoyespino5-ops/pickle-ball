@@ -130,14 +130,36 @@ function readPaidEvent(event: Record<string, unknown>) {
 
   // reference_number is set by US when creating the checkout session: the
   // booking number for a player booking, or the license link reference.
+  // It can appear on the resource itself OR on the nested payment, so check
+  // both — relying on one nesting level is what made booking payments look
+  // like license renewals.
   const reference = String(
     (attributes?.reference_number as string) ??
+      (firstAttrs?.reference_number as string) ??
       (attributes?.reference as string) ??
+      (firstAttrs?.reference as string) ??
       "",
   ).trim();
 
-  const metadata = (attributes?.metadata ?? {}) as Record<string, unknown>;
-  const metaBookingNumber = String(metadata?.booking_number ?? "").trim();
+  // metadata is attached to the CHECKOUT SESSION we created. Different event
+  // shapes expose it at different depths (and some omit it entirely), so read
+  // every plausible location instead of a single path.
+  const metadataSources = [
+    attributes?.metadata,
+    firstAttrs?.metadata,
+    resource?.metadata,
+    eventAttrs?.metadata,
+  ];
+  let metaBookingNumber = "";
+  for (const source of metadataSources) {
+    const candidate = String(
+      ((source as Record<string, unknown>)?.booking_number as string) ?? "",
+    ).trim();
+    if (candidate) {
+      metaBookingNumber = candidate;
+      break;
+    }
+  }
 
   return {
     type,
@@ -218,8 +240,55 @@ Deno.serve(async (req) => {
   // court payment as a license renewal (the previous behaviour) would both
   // fail to confirm the booking and wrongly extend the license.
   // -------------------------------------------------------------------------
-  const bookingNumber = metaBookingNumber || "";
-  const isBookingPayment = bookingNumber.length > 0;
+  // -------------------------------------------------------------------------
+  // Which product is this? A player booking carries its booking number in
+  // metadata.booking_number AND/OR reference_number (the paymongo-checkout
+  // function sets both). Metadata is dropped by some PayMongo event shapes, so
+  // reference_number is the fallback that stops a booking payment being
+  // misrouted into the ₱999 software-license renewal.
+  //
+  // Final safety net: if the checkout session id (or payment id) is already
+  // stored on a payments row, this is unambiguously a booking payment — the
+  // session id is written by attach_booking_paymongo_session() at checkout
+  // time, so it survives even if every reference field goes missing.
+  // -------------------------------------------------------------------------
+  let bookingNumber = metaBookingNumber || "";
+  if (!bookingNumber && /^RB-/i.test(reference)) {
+    bookingNumber = reference;
+  }
+
+  let isBookingPayment = bookingNumber.length > 0;
+
+  if (!isBookingPayment && (sessionId || paymentId)) {
+    const orFilter = [
+      sessionId ? `paymongo_checkout_session_id.eq.${sessionId}` : null,
+      paymentId ? `paymongo_payment_id.eq.${paymentId}` : null,
+    ]
+      .filter(Boolean)
+      .join(",");
+
+    if (orFilter) {
+      const { data: known } = await supabase
+        .from("payments")
+        .select("booking_id, bookings(booking_number)")
+        .or(orFilter)
+        .limit(1)
+        .maybeSingle();
+
+      if (known?.booking_id) {
+        isBookingPayment = true;
+        // Recover the booking number so the confirmation RPC can still match
+        // the row by reference if the session lookup inside it misses.
+        // The joined relation may come back as an object or a 1-element array.
+        const joined = (known as Record<string, unknown>).bookings as
+          | { booking_number?: string }
+          | { booking_number?: string }[]
+          | null;
+        const joinedRow = Array.isArray(joined) ? joined[0] : joined;
+        bookingNumber = joinedRow?.booking_number || bookingNumber;
+      }
+    }
+  }
 
   if (isBookingPayment) {
     const { data, error } = await supabase.rpc("confirm_booking_from_paymongo", {
