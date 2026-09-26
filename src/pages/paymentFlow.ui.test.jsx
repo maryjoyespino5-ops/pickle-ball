@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
@@ -121,28 +122,39 @@ describe("BookingTable pay action", () => {
     expect(screen.queryByText("Pay with GCash")).toBeNull();
   });
 
-  it("shows Paid · Confirmed for a GCash-settled booking", () => {
+  // A GCash payment settles the MONEY, not the game (migration 0029). The
+  // booking status is therefore a separate column and stays 'pending' while
+  // the payment status reads 'paid' — these two must never be conflated into
+  // one "Paid · Confirmed" badge.
+  it("shows paid in the payment column and pending in the booking column", () => {
     render(
       <BookingTable
         bookings={[
           {
             ...base,
             id: "RB-4",
-            status: "confirmed",
+            status: "pending",
             paymentStatus: "paid",
             isPaid: true,
-            isConfirmed: true,
+            isConfirmed: false,
           },
         ]}
         onPay={vi.fn()}
       />,
     );
-    expect(screen.getByText("Paid · Confirmed")).toBeTruthy();
-    // A settled booking offers no payment action.
+    const headerCells = screen.getAllByRole("columnheader").map((c) => c.textContent);
+    expect(headerCells).toContain("Booking status");
+    expect(headerCells).toContain("Payment status");
+
+    const row = screen.getByText("RB-4").closest("tr");
+    expect(within(row).getByText("paid")).toBeTruthy();
+    expect(within(row).getByText("pending")).toBeTruthy();
+    // The old combined badge is gone, and a settled booking offers no action.
+    expect(screen.queryByText(/Paid\s*·\s*Confirmed/)).toBeNull();
     expect(screen.queryByText("Pay with GCash")).toBeNull();
   });
 
-  it("does not claim paid+confirmed while the booking is still unpaid", () => {
+  it("does not show a payment status of paid while the payment is pending", () => {
     render(
       <BookingTable
         bookings={[
@@ -158,7 +170,7 @@ describe("BookingTable pay action", () => {
         onPay={vi.fn()}
       />,
     );
-    expect(screen.queryByText("Paid · Confirmed")).toBeNull();
+    expect(screen.queryByText("paid")).toBeNull();
   });
 });
 

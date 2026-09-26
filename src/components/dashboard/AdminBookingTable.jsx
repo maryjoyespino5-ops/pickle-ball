@@ -20,8 +20,8 @@ export function AdminBookingTable({
             <th>Date / time</th>
             <th>Duration</th>
             <th>Amount</th>
-            <th>Status</th>
-            <th>Payment</th>
+            <th>Booking status</th>
+            <th>Payment status</th>
             <th />
           </tr>
         </thead>
@@ -50,23 +50,23 @@ export function AdminBookingTable({
               </td>
               <td data-label="Duration">{booking.duration} hr</td>
               <td data-label="Amount">{formatCurrency(booking.amount)}</td>
-              <td data-label="Status">
+              <td data-label="Booking status">
                 <span className={`status status-${booking.status}`}>
                   {booking.status}
                 </span>
               </td>
-              <td data-label="Payment">
+              {/* Payment status is its own column, read from the same
+                  payments row the player sees, so admin and player can never
+                  disagree about whether the money settled. */}
+              <td data-label="Payment status">
                 <span className={`status status-${booking.paymentStatus}`}>
                   {booking.paymentStatus}
                 </span>
-                {/* A GCash-paid booking is settled end to end: show the method
-                    alongside the PAID + CONFIRMED state, for guest bookings too
-                    (their payment row carries the PayMongo reference). */}
-                {booking.isPaid && booking.isConfirmed && (
+                {booking.isPaid && (
                   <>
                     <br />
                     <small className="payment-status paid-confirmed-badge">
-                      Paid · Confirmed
+                      Paid
                       {booking.paymentMethod ? ` · ${booking.paymentMethod}` : ""}
                     </small>
                   </>

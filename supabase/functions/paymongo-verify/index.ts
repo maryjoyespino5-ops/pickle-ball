@@ -249,7 +249,13 @@ Deno.serve(async (req) => {
     unknown
   > | null;
   const outcome = String(row?.outcome ?? "unknown");
-  const paid = outcome === "confirmed" || outcome === "duplicate";
+  // confirm_booking_from_paymongo returns 'paid' for a fresh success (0029 made
+  // a payment settle MONEY only, leaving bookings.status alone) and 'duplicate'
+  // when this event id was already applied. Both mean the player has paid.
+  // 'confirmed' is the pre-0029 literal and is still accepted so a function
+  // deployed ahead of its migration still reports the truth.
+  const paid =
+    outcome === "paid" || outcome === "confirmed" || outcome === "duplicate";
 
   return json({
     ok: true,

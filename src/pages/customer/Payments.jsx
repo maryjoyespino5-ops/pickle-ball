@@ -50,7 +50,8 @@ export function Payments() {
                 <th>Date &amp; time</th>
                 <th>Amount</th>
                 <th>Method</th>
-                <th>Status</th>
+                <th>Booking status</th>
+                <th>Payment status</th>
               </tr>
             </thead>
             <tbody>
@@ -79,7 +80,16 @@ export function Payments() {
                       <small className="payment-status">{payment.reference}</small>
                     )}
                   </td>
-                  <td data-label="Status">
+                  <td data-label="Booking status">
+                    {payment.bookingStatus ? (
+                      <span className={`status status-${payment.bookingStatus}`}>
+                        {payment.bookingStatus}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td data-label="Payment status">
                     <span className={`status status-${payment.status}`}>
                       {payment.status}
                     </span>

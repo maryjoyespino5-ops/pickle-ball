@@ -15,7 +15,7 @@ export async function getMyPayments() {
   const { data, error } = await supabase
     .from("payments")
     .select(
-      "id, booking_id, amount, method, status, reference, paid_at, created_at, bookings(booking_number, booking_date, start_time, courts(name))",
+      "id, booking_id, amount, method, status, reference, paid_at, created_at, bookings(booking_number, booking_date, start_time, status, courts(name))",
     )
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -29,6 +29,9 @@ export async function getMyPayments() {
     amount: Number(row.amount),
     method: row.method,
     status: row.status,
+    // The booking's own status, so this page can show booking state and money
+    // state side by side instead of conflating the two.
+    bookingStatus: row.bookings?.status ?? null,
     reference: row.reference,
     paidAt: row.paid_at,
     createdAt: row.created_at,

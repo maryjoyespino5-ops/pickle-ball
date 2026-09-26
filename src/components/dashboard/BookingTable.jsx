@@ -1,7 +1,12 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { CANCELLABLE_STATUSES } from "../../lib/constants";
-export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) {
+export function BookingTable({
+  bookings = [],
+  onCancel,
+  onPay,
+  payingId = "",
+}) {
   return (
     <div className="table-wrap">
       <table className="booking-table">
@@ -11,7 +16,8 @@ export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) 
             <th>Court</th>
             <th>Date & time</th>
             <th>Amount</th>
-            <th>Status</th>
+            <th>Booking status</th>
+            <th>Payment status</th>
             <th />
           </tr>
         </thead>
@@ -30,24 +36,19 @@ export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) 
                 </small>
               </td>
               <td data-label="Amount">{formatCurrency(booking.amount)}</td>
-              <td data-label="Status">
+              <td data-label="Booking status">
                 <span className={`status status-${booking.status}`}>
                   {booking.status}
                 </span>
-                <br />
-                <small className="payment-status">
+              </td>
+              {/* Payment is deliberately its OWN column, separate from the
+                  booking status above: paying settles the MONEY, not the game.
+                  A GCash payment flips this to 'paid' while the booking stays
+                  'pending' until the slot is played. */}
+              <td data-label="Payment status">
+                <span className={`status status-${booking.paymentStatus}`}>
                   {booking.paymentStatus}
-                </small>
-                {/* A GCash-paid booking is PAID + CONFIRMED; surface both
-                    side by side so the player sees the settled state. */}
-                {booking.isPaid && booking.isConfirmed && (
-                  <>
-                    <br />
-                    <small className="payment-status paid-confirmed-badge">
-                      Paid · Confirmed
-                    </small>
-                  </>
-                )}
+                </span>
               </td>
               <td className="table-action-cell">
                 {CANCELLABLE_STATUSES.includes(booking.status) &&
