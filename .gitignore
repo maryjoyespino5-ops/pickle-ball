@@ -10,3 +10,8 @@ supabase/.temp/
 t2.txt
 t3.txt
 testout.txt
+
+# Dev-only diagnostic that reads AND WRITES the live database through the
+# service-role key. Deliberately not committed: it must never sit in the repo
+# one command away from mutating production rows.
+scripts/live-payment-check.mjs

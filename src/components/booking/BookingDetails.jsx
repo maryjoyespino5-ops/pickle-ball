@@ -53,16 +53,23 @@ export function BookingDetails({
         </div>
       </div>
       {/* Confirm and Complete were removed with the simplified lifecycle
-          (migration 0024): a verified GCash payment confirms a booking and
-          complete_past_bookings() completes it once the slot ends. What is left
-          for a human is recording a Pay-at-Court payment, rescheduling, and
-          cancelling. */}
+          (migration 0024): a verified GCash payment settles the MONEY and
+          complete_past_bookings() completes the booking once the slot ends.
+          What is left for a human is recording a Pay-at-Court payment,
+          rescheduling, and cancelling. */}
       <div className="details-actions">
-        {!readOnly && booking.paymentStatus === PAYMENT_STATUSES.PENDING && (
-          <button className="button outline" onClick={() => onAction("paid")}>
-            Mark paid
-          </button>
-        )}
+        {/* "Mark paid" records CASH handed over at the desk. It is deliberately
+            hidden for GCash bookings: that money went through PayMongo, and
+            letting an admin hand-flip it would allow a court to be marked paid
+            that was never paid for. A GCash booking settles itself via the
+            webhook (with paymongo-verify as the self-healing fallback). */}
+        {!readOnly &&
+          booking.paymentStatus === PAYMENT_STATUSES.PENDING &&
+          !/gcash/i.test(String(booking.paymentMethod || "")) && (
+            <button className="button outline" onClick={() => onAction("paid")}>
+              Mark paid
+            </button>
+          )}
         {!readOnly && booking.status !== BOOKING_STATUSES.CANCELLED && (
           <button className="text-button" onClick={() => onAction("cancelled")}>
             Cancel booking

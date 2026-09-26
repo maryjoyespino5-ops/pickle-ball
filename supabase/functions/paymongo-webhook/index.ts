@@ -1,4 +1,4 @@
-﻿// Supabase Edge Function: paymongo-webhook
+// Supabase Edge Function: paymongo-webhook
 //
 // Receives PayMongo webhook deliveries and acts on them server-side. It handles
 // TWO independent flows, routed by which booking the payment belongs to:
@@ -56,8 +56,14 @@ async function hmacHex(secret: string, message: string): Promise<string> {
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
-  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(message),
+  );
+  return [...new Uint8Array(sig)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**
@@ -65,7 +71,10 @@ async function hmacHex(secret: string, message: string): Promise<string> {
  * The signed payload is `${t}.${rawBody}`. In test mode use `te`, in live mode
  * use `li`. We accept whichever is present and matches.
  */
-async function verifySignature(rawBody: string, header: string): Promise<boolean> {
+async function verifySignature(
+  rawBody: string,
+  header: string,
+): Promise<boolean> {
   if (!WEBHOOK_SECRET) return false;
   const parts = Object.fromEntries(
     header.split(",").map((kv) => {
@@ -96,8 +105,13 @@ function readPaidEvent(event: Record<string, unknown>) {
   const eventAttrs = ((event?.data as Record<string, unknown>)?.attributes ??
     {}) as Record<string, unknown>;
   const resource = (eventAttrs?.data ?? eventAttrs) as Record<string, unknown>;
-  const attributes = (resource?.attributes ?? resource ?? {}) as Record<string, unknown>;
-  const type = String(eventAttrs?.type ?? (event?.data as Record<string, unknown>)?.type ?? "");
+  const attributes = (resource?.attributes ?? resource ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const type = String(
+    eventAttrs?.type ?? (event?.data as Record<string, unknown>)?.type ?? "",
+  );
 
   // Payment details can sit in attributes.payments[0] (link.payment.paid) or in
   // the resource itself (payment.paid).
@@ -124,7 +138,9 @@ function readPaidEvent(event: Record<string, unknown>) {
     null;
 
   const sessionId =
-    resourceType === "checkout_session" ? ((resource?.id as string) ?? null) : null;
+    resourceType === "checkout_session"
+      ? ((resource?.id as string) ?? null)
+      : null;
 
   const status = String(firstAttrs?.status ?? attributes?.status ?? "");
 
@@ -175,7 +191,9 @@ function readPaidEvent(event: Record<string, unknown>) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: { "access-control-allow-origin": "*" } });
+    return new Response("ok", {
+      headers: { "access-control-allow-origin": "*" },
+    });
   }
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
@@ -185,7 +203,10 @@ Deno.serve(async (req) => {
   const signature = req.headers.get("Paymongo-Signature") ?? "";
 
   if (!WEBHOOK_SECRET) {
-    return json({ error: "Server not configured: PAYMONO_WEBHOOK_SECRET missing" }, 500);
+    return json(
+      { error: "Server not configured: PAYMONO_WEBHOOK_SECRET missing" },
+      500,
+    );
   }
   const valid = await verifySignature(rawBody, signature);
   if (!valid) {
@@ -200,9 +221,25 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  const eventId = String((event?.data as Record<string, unknown>)?.id ?? event?.id ?? "");
-  const { type, amount, paymentId, sessionId, status, metaBookingNumber } =
-    readPaidEvent(event);
+  const eventId = String(
+    (event?.data as Record<string, unknown>)?.id ?? event?.id ?? "",
+  );
+  // `reference` and `linkRef` MUST be destructured: the routing decision below
+  // (does this paid event belong to a player booking?) and the license fallback
+  // both read them. Leaving them out raised a ReferenceError — which escaped as
+  // a 500 BEFORE confirm_booking_from_paymongo() was ever called, so a
+  // successful GCash payment never flipped the booking to PAID and PayMongo saw
+  // a failure and retried forever.
+  const {
+    type,
+    amount,
+    paymentId,
+    sessionId,
+    status,
+    metaBookingNumber,
+    reference,
+    linkRef,
+  } = readPaidEvent(event);
 
   // PayMongo reports the instrument used (e.g. "gcash") on the payment
   // resource. Fall back to the label the booking flow expects.
@@ -211,8 +248,9 @@ Deno.serve(async (req) => {
   // Only paid events renew the license. Everything else is acknowledged and
   // ignored (so PayMongo stops retrying).
   const isPaid =
-    /payment\.paid|link\.payment\.paid|checkout_session\.payment\.paid/i.test(type) ||
-    status === "paid";
+    /payment\.paid|link\.payment\.paid|checkout_session\.payment\.paid/i.test(
+      type,
+    ) || status === "paid";
   if (!isPaid) {
     return json({ ok: true, ignored: true, type });
   }
@@ -291,14 +329,17 @@ Deno.serve(async (req) => {
   }
 
   if (isBookingPayment) {
-    const { data, error } = await supabase.rpc("confirm_booking_from_paymongo", {
-      p_event_id: eventId,
-      p_session_ref: sessionId,
-      p_payment_ref: paymentId,
-      p_amount: amount,
-      p_method: method,
-      p_event_type: type || "checkout_session.payment.paid",
-    });
+    const { data, error } = await supabase.rpc(
+      "confirm_booking_from_paymongo",
+      {
+        p_event_id: eventId,
+        p_session_ref: sessionId,
+        p_payment_ref: paymentId,
+        p_amount: amount,
+        p_method: method,
+        p_event_type: type || "checkout_session.payment.paid",
+      },
+    );
 
     if (error) {
       // 500 so PayMongo retries; the event-id ledger makes the retry safe.
@@ -317,13 +358,16 @@ Deno.serve(async (req) => {
   // -------------------------------------------------------------------------
   // Otherwise: software-license renewal (unchanged behaviour).
   // -------------------------------------------------------------------------
-  const { data, error } = await supabase.rpc("subscription_renew_from_paymongo", {
-    p_event_id: eventId,
-    p_payment_id: paymentId,
-    p_link_reference: linkRef || null,
-    p_amount: amount,
-    p_event_type: type || "payment.paid",
-  });
+  const { data, error } = await supabase.rpc(
+    "subscription_renew_from_paymongo",
+    {
+      p_event_id: eventId,
+      p_payment_id: paymentId,
+      p_link_reference: linkRef || null,
+      p_amount: amount,
+      p_event_type: type || "payment.paid",
+    },
+  );
 
   if (error) {
     // Surface a 500 so PayMongo retries; the idempotency table means a retry

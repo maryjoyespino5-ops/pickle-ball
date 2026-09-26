@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
@@ -16,13 +17,24 @@ export function Payments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     paymentService
       .getMyPayments()
       .then(setPayments)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // A GCash payment is settled by the PayMongo webhook, which writes the
+  // payments row and (through the mirror triggers) the booking. Without this
+  // the page kept showing "pending" until the player manually reloaded, even
+  // though the money had landed.
+  useRealtimeBookings(load);
 
   return (
     <main className="dashboard-page">

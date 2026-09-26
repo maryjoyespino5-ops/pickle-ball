@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { AdminBookingTable } from "./AdminBookingTable";
+import { BookingDetails } from "../booking/BookingDetails";
 
 /**
  * The simplified lifecycle (migration 0024) removed the manual "Confirm" and
@@ -72,5 +73,55 @@ describe("AdminBookingTable actions", () => {
     expect(screen.getByText("View")).toBeTruthy();
     expect(screen.queryByText("Reschedule")).toBeNull();
     expect(screen.queryByText("Cancel")).toBeNull();
+  });
+});
+
+/**
+ * Task 5: a GCash payment settles itself. Nothing in the admin UI may offer to
+ * hand-mark one paid, because that money moved through PayMongo — a manual
+ * "paid" would be a booking that was never paid for.
+ */
+describe("BookingDetails payment actions", () => {
+  it("offers Mark paid for an unpaid Pay-at-Court booking", () => {
+    render(
+      <BookingDetails
+        booking={{ ...booking, paymentMethod: "Pay at Court" }}
+        onAction={vi.fn()}
+        onReschedule={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Mark paid")).toBeTruthy();
+  });
+
+  it("never offers Mark paid for an unpaid GCash booking", () => {
+    render(
+      <BookingDetails
+        booking={{ ...booking, paymentMethod: "GCash" }}
+        onAction={vi.fn()}
+        onReschedule={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("Mark paid")).toBeNull();
+  });
+
+  it("keeps booking status and payment status as separate concerns", () => {
+    render(
+      <BookingDetails
+        booking={{
+          ...booking,
+          status: "pending",
+          paymentStatus: "paid",
+          paymentMethod: "GCash",
+        }}
+        onAction={vi.fn()}
+        onReschedule={vi.fn()}
+      />,
+    );
+    // Paid money, game still upcoming: both facts are shown independently and
+    // the combined "Paid · Confirmed" badge must not come back.
+    expect(screen.getByText("paid")).toBeTruthy();
+    expect(screen.getByText("pending")).toBeTruthy();
+    expect(screen.queryByText(/Paid\s*·\s*Confirmed/)).toBeNull();
+    expect(screen.queryByText("Mark paid")).toBeNull();
   });
 });

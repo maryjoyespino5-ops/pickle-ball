@@ -1,12 +1,23 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { Modal } from "../../components/common/Modal";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { paymentService } from "../../services/paymentService";
+import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
 import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
 import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
 import { subscriptionService } from "../../services/subscriptionService";
+
+/**
+ * True when a payment was collected online (GCash via PayMongo) rather than in
+ * cash at the desk. Those rows are settled by the PayMongo webhook or by
+ * "Recover from PayMongo" — never by an admin typing "Mark paid".
+ */
+function isGcash(method) {
+  return /gcash/i.test(String(method || ""));
+}
+
 export function Payments() {
   const { locked, refresh } = useSubscriptionLock();
   const [payments, setPayments] = useState([]);
@@ -20,7 +31,7 @@ export function Payments() {
   const [refundTarget, setRefundTarget] = useState(null);
   const [reconcilingId, setReconcilingId] = useState("");
   const [actionError, setActionError] = useState("");
-  const load = () => {
+  const load = useCallback(() => {
     setActionError("");
     setLoading(true);
     paymentService
@@ -30,10 +41,15 @@ export function Payments() {
         setActionError(err.message || "Could not load payments."),
       )
       .finally(() => setLoading(false));
-  };
+  }, []);
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+  // The admin payments table used to load once and then sit stale: a player's
+  // GCash payment landing at PayMongo flipped the status server-side while the
+  // screen still read "pending" until a manual refresh. Realtime on the same
+  // shared bus as the other dashboards keeps the money column truthful.
+  useRealtimeBookings(load);
   const markPaid = async (id) => {
     if (locked) {
       setActionError("Your software license has expired. Renew the subscription to continue.");
@@ -216,13 +232,21 @@ export function Payments() {
                     onClick={() => setSelected(payment)}>
                     View
                   </button>
-                  {payment.paymentStatus === "pending" && !locked && (
-                    <button
-                      className="row-link"
-                      onClick={() => markPaid(payment.id)}>
-                      Mark paid
-                    </button>
-                  )}
+                  {/* "Mark paid" records CASH collected at the desk. It must
+                      never be offered for a GCash booking: that money moved
+                      through PayMongo, and hand-flipping it would let an admin
+                      mark a court paid that was never paid for. A GCash row
+                      that is still pending gets "Recover from PayMongo" below,
+                      which asks PayMongo what actually happened. */}
+                  {payment.paymentStatus === "pending" &&
+                    !locked &&
+                    !isGcash(payment.paymentMethod) && (
+                      <button
+                        className="row-link"
+                        onClick={() => markPaid(payment.id)}>
+                        Mark paid
+                      </button>
+                    )}
                   {payment.paymentStatus === "pending" && !locked && (
                     <button
                       className="row-link"

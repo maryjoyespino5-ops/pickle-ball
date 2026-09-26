@@ -1,4 +1,4 @@
-﻿// Supabase Edge Function: paymongo-checkout
+// Supabase Edge Function: paymongo-checkout
 //
 // Creates a PayMongo Checkout Session so a PLAYER can pay for a court booking
 // with GCash (or any other method enabled on the account). Security model:
@@ -134,11 +134,32 @@ Deno.serve(async (req) => {
   // The Origin header makes the redirect work on localhost and on the deployed
   // site without configuration; PAYMONO_PUBLIC_SITE_URL overrides it.
   const origin = PUBLIC_SITE_URL || req.headers.get("origin") || "";
-  const managePath = `/booking/${encodeURIComponent(bookingNumber)}`;
-  const token = String(payload?.token ?? "").trim();
-  const query = token ? `?t=${encodeURIComponent(token)}&paid=1` : "?paid=1";
-  const successUrl = origin ? `${origin}${managePath}${query}` : undefined;
-  const cancelUrl = origin ? `${origin}${managePath}${query}&cancelled=1` : undefined;
+  // A signed-in player started the payment from My Bookings, so send them back
+  // there — that page owns the settle-poll. A guest has no account, so they go
+  // to the public manage page (which authorises with the token in ?t=).
+  const returnPath = guestToken
+    ? `/booking/${encodeURIComponent(bookingNumber)}`
+    : "/my-bookings";
+  // Reuse the token that was already parsed and verified above (guestToken).
+  // This previously read `payload?.token` only, but the browser sends the
+  // secret as `guestToken` (see bookingPaymentService.startBookingCheckout), so
+  // the return link silently lost the `?t=` parameter for every GUEST payment.
+  // The guest came back from PayMongo to a bare /booking/RB-...?paid=1 with no
+  // token, so the page could neither reopen the booking nor poll the payment
+  // status — the player paid and still saw "pending".
+  const query = [
+    guestToken ? `t=${encodeURIComponent(guestToken)}` : "",
+    "paid=1",
+    // Names the booking being settled so the poll targets the right row even
+    // when the player has more than one unpaid booking.
+    `booking=${encodeURIComponent(bookingNumber)}`,
+  ]
+    .filter(Boolean)
+    .join("&");
+  const successUrl = origin ? `${origin}${returnPath}?${query}` : undefined;
+  const cancelUrl = origin
+    ? `${origin}${returnPath}?${query}&cancelled=1`
+    : undefined;
 
   const description = `${booking.booking_number} â€” ${
     booking.customer_name || "Court booking"
