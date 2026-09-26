@@ -129,6 +129,63 @@ export async function getBookingPaymentStatus({ bookingNumber, guestToken = "" }
  * @param {(state: object) => void} [args.onTick] called after each poll
  * @returns {Promise<{paid: boolean, state: object|null}>}
  */
+/**
+ * Ask the server to verify a booking's GCash payment with PayMongo directly.
+ *
+ * Self-healing fallback for the webhook: paymongo-verify looks up the booking
+ * (owner or guest token), asks PayMongo whether the Checkout Session we
+ * created was paid, and - only if PayMongo says yes - commits through the SAME
+ * confirm_booking_from_paymongo() path the webhook uses (same amount
+ * cross-check, idempotency and atomicity).
+ *
+ * The browser can never mark itself paid: a not-paid answer writes nothing.
+ * Failures are swallowed to null so the status poll can keep running - verify
+ * is best-effort, the database read remains the source of truth.
+ *
+ * @returns {Promise<{paid: boolean, paymentStatus: string|null, bookingStatus: string|null, source: string}|null>}
+ */
+export async function verifyBookingPayment({ bookingNumber, guestToken = "" }) {
+  try {
+    assertSupabase();
+    if (!bookingNumber) return null;
+
+    const base = String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
+    const url = `${base}/functions/v1/paymongo-verify`;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const headers = { "content-type": "application/json" };
+    if (session && session.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        bookingNumber,
+        guestToken: guestToken || undefined,
+      }),
+    });
+
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+    if (!response.ok || !payload || !payload.ok) return null;
+
+    return {
+      paid: payload.paid === true,
+      paymentStatus: payload.paymentStatus ?? null,
+      bookingStatus: payload.bookingStatus ?? null,
+      source: payload.source ?? "unknown",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function waitForBookingPayment({
   bookingNumber,
   guestToken = "",
@@ -146,6 +203,19 @@ export async function waitForBookingPayment({
       if (onTick) onTick(last);
       if (last.paymentStatus === "paid") return { paid: true, state: last };
       if (last.bookingStatus === "cancelled") return { paid: false, state: last };
+      // Still unpaid: ask the server to verify with PayMongo directly. This
+      // heals payments whose webhook delivery never arrived (guest and
+      // signed-in alike). Best-effort - a null answer just keeps polling.
+      try {
+        const verified = await verifyBookingPayment({ bookingNumber, guestToken });
+        if (verified && verified.paid) {
+          last = await getBookingPaymentStatus({ bookingNumber, guestToken });
+          if (onTick) onTick(last);
+          if (last.paymentStatus === "paid") return { paid: true, state: last };
+        }
+      } catch {
+        // Ignore and keep polling until the deadline.
+      }
     } catch {
       // Transient failure (offline, cold start): keep trying until the deadline.
     }
@@ -175,6 +245,7 @@ export const bookingPaymentService = {
   PAYMONGO_METHOD,
   startBookingCheckout,
   getBookingPaymentStatus,
+  verifyBookingPayment,
   waitForBookingPayment,
   bookingPaymentMessage,
 };

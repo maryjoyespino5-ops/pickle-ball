@@ -15,3 +15,10 @@ verify_jwt = false
 # server.
 [functions.paymongo-checkout]
 verify_jwt = false
+
+# GCash payment self-heal. Same trust model as checkout: guests pay without an
+# account, so JWT verification is off and the function authorises the caller
+# itself (signed-in owner via the JWT, or guest via the booking's secret
+# token) before asking PayMongo anything.
+[functions.paymongo-verify]
+verify_jwt = false

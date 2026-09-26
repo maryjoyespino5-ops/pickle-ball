@@ -33,6 +33,7 @@ import {
   bookingPaymentMessage,
   getBookingPaymentStatus,
   startBookingCheckout,
+  verifyBookingPayment,
   waitForBookingPayment,
 } from "./bookingPaymentService";
 import { __mocks } from "../lib/supabase";
@@ -319,6 +320,54 @@ describe("waitForBookingPayment", () => {
     expect(__mocks.rpc).toHaveBeenCalledTimes(1);
     expect(paid).toBe(false);
     expect(state).not.toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * verifyBookingPayment - server-side self-heal for a lost webhook
+ * ---------------------------------------------------------------------- */
+describe("verifyBookingPayment", () => {
+  it("posts the booking number to paymongo-verify and returns the verdict", async () => {
+    __mocks.getSession.mockResolvedValue({ data: { session: null } });
+    mockFetch((url, options) => {
+      expect(url).toBe(`${BASE_URL}/functions/v1/paymongo-verify`);
+      expect(JSON.parse(options.body)).toEqual({ bookingNumber: "RB-1", guestToken: "tok-9" });
+      return {
+        ok: true,
+        json: async () => ({
+          ok: true,
+          paid: true,
+          paymentStatus: "paid",
+          bookingStatus: "confirmed",
+          source: "paymongo",
+        }),
+      };
+    });
+
+    const result = await verifyBookingPayment({ bookingNumber: "RB-1", guestToken: "tok-9" });
+    expect(result).toEqual({ paid: true, paymentStatus: "paid", bookingStatus: "confirmed", source: "paymongo" });
+  });
+
+  it("attaches the Bearer token for a signed-in owner", async () => {
+    __mocks.getSession.mockResolvedValue({ data: { session: { access_token: "jwt-token" } } });
+    let seenHeaders = null;
+    mockFetch((_url, options) => {
+      seenHeaders = options.headers;
+      return { ok: true, json: async () => ({ ok: true, paid: false, source: "paymongo" }) };
+    });
+
+    await verifyBookingPayment({ bookingNumber: "RB-1" });
+    expect(seenHeaders.Authorization).toBe("Bearer jwt-token");
+  });
+
+  it("swallows failures to null so the status poll keeps running", async () => {
+    __mocks.getSession.mockResolvedValue({ data: { session: null } });
+    mockFetch(() => ({ ok: false, json: async () => ({ ok: false }) }));
+    await expect(verifyBookingPayment({ bookingNumber: "RB-1" })).resolves.toBeNull();
+  });
+
+  it("requires a booking reference", async () => {
+    await expect(verifyBookingPayment({ bookingNumber: "" })).resolves.toBeNull();
   });
 });
 
