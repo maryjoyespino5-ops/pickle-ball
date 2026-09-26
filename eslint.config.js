@@ -23,4 +23,15 @@ export default [
       ],
     },
   },
+  // Dev-only Node helpers (SQL/migration checkers, one-off patch scripts).
+  // They run in Node, not the browser, so they need Node globals — otherwise
+  // `process` and `console` are reported as undefined by js.configs.recommended.
+  {
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
+    },
+  },
 ];

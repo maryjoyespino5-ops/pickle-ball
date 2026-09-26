@@ -6,3 +6,12 @@ project_id = "pickleball-booking"
 # supabase/functions/paymongo-webhook/index.ts).
 [functions.paymongo-webhook]
 verify_jwt = false
+
+# Player court-booking checkout. Guests must be able to pay (they have no
+# account), so JWT verification is off. Authorisation is instead enforced
+# server-side in begin_booking_paymongo_checkout(), which accepts a request
+# only from the booking's owner (callerId) or from a guest holding that
+# booking's secret guest_token. The PayMongo secret key never leaves the
+# server.
+[functions.paymongo-checkout]
+verify_jwt = false

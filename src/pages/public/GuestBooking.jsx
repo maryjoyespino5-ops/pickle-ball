@@ -9,6 +9,7 @@ import { QrCode } from "../../components/qr/QrCode";
 import { courtService } from "../../services/courtService";
 import { facilityService } from "../../services/facilityService";
 import { guestBookingService } from "../../services/guestBookingService";
+import { bookingPaymentService } from "../../services/bookingPaymentService";
 import { subscriptionService } from "../../services/subscriptionService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12, todayISO } from "../../utils/dateUtils";
@@ -56,7 +57,33 @@ export function GuestBooking({ embedded = false }) {
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
   const [confirmation, setConfirmation] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
   const canvasStore = useRef({});
+
+  /**
+   * Pay the fresh guest booking with GCash (PayMongo hosted checkout). The
+   * booking already holds its slot; the signed webhook confirms the payment —
+   * the redirect back is never trusted. The manage link carries the token, so
+   * the player can check the payment state there after returning.
+   */
+  const payWithGcash = async () => {
+    if (!confirmation) return;
+    setPaying(true);
+    setPayError("");
+    try {
+      const { checkoutUrl } = await bookingPaymentService.startBookingCheckout({
+        bookingNumber: confirmation.reference,
+        guestToken: confirmation.token,
+      });
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setPayError(
+        err?.message || "Could not start the GCash payment. Please try again.",
+      );
+      setPaying(false);
+    }
+  };
 
   const load = async (targetDate) => {
     setLoadError("");
@@ -271,10 +298,26 @@ export function GuestBooking({ embedded = false }) {
             </div>
             <div className="summary-row">
               <span>Payment</span>
-              <strong>
-                Pay at court · {formatCurrency(confirmation.amount)}
-              </strong>
+              <strong>{formatCurrency(confirmation.amount)}</strong>
             </div>
+            {confirmation.token && (
+              <div className="booking-payment-box">
+                <button
+                  className="button full-width"
+                  type="button"
+                  disabled={paying}
+                  onClick={payWithGcash}>
+                  {paying
+                    ? "Opening GCash..."
+                    : `Pay ${formatCurrency(confirmation.amount)} now with GCash`}
+                </button>
+                {payError && <ErrorMessage message={payError} />}
+                <small>
+                  Prefer to pay in cash? Show your QR code at the front desk —
+                  this booking already holds your slot either way.
+                </small>
+              </div>
+            )}
             <div className="confirmation-actions">
               <Button to={managePath}>
                 View or manage booking <span aria-hidden="true">-&gt;</span>

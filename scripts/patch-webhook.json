@@ -1,0 +1,13 @@
+{
+  "file": "supabase/functions/paymongo-webhook/index.ts",
+  "replacements": [
+    {
+      "old": "  const paymentId =\n    (first?.id as string) ??\n    (resource?.id as string) ??\n    (attributes?.id as string) ??\n    null;\n  const status = String(firstAttrs?.status ?? attributes?.status ?? \"\");\n  const linkRef =\n    (attributes?.reference_number as string) ??\n    (attributes?.reference as string) ??\n    LINK_REFERENCE;\n\n  return { type, amount, paymentId, status, linkRef };\n}",
+      "new": "  // For checkout_sessions the resource id is the cs_... session id; the actual\n  // payment id arrives under payments[0] or attributes.payment_id.\n  const resourceType = String(resource?.type ?? \"\");\n  const paymentId =\n    (first?.id as string) ??\n    (resourceType === \"payment\" ? (resource?.id as string) : null) ??\n    (attributes?.id as string) ??\n    null;\n\n  const sessionId =\n    resourceType === \"checkout_session\" ? ((resource?.id as string) ?? null) : null;\n\n  const status = String(firstAttrs?.status ?? attributes?.status ?? \"\");\n\n  // reference_number is set by US when creating the checkout session: the\n  // booking number for a player booking, or the license link reference.\n  const reference = String(\n    (attributes?.reference_number as string) ??\n      (attributes?.reference as string) ??\n      \"\",\n  ).trim();\n\n  const metadata = (attributes?.metadata ?? {}) as Record<string, unknown>;\n  const metaBookingNumber = String(metadata?.booking_number ?? \"\").trim();\n\n  return {\n    type,\n    amount,\n    paymentId,\n    sessionId,\n    status,\n    reference,\n    metaBookingNumber,\n    linkRef: reference || LINK_REFERENCE,\n  };\n}"
+    },
+    {
+      "old": "  // PayMongo reports amounts in CENTAVOS (99900 = ₱999.00). Convert to pesos\n  // the database understands, matching how the license fee is stored.\n  const rawAmount =\n    (firstAttrs?.amount as number) ?? (attributes?.amount as number) ?? null;",
+      "new": "  // PayMongo reports amounts in CENTAVOS (30000 = ₱300.00). Convert to pesos,\n  // the unit the database stores.\n  const rawAmount =\n    (firstAttrs?.amount as number) ??\n    (attributes?.amount as number) ??\n    (eventAttrs?.amount as number) ??\n    null;"
+    }
+  ]
+}

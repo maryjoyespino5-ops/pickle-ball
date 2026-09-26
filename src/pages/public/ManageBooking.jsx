@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { guestBookingService } from "../../services/guestBookingService";
+import {
+  bookingPaymentService,
+  bookingPaymentMessage,
+} from "../../services/bookingPaymentService";
 import { subscriptionService } from "../../services/subscriptionService";
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12 } from "../../utils/dateUtils";
@@ -32,6 +36,34 @@ export function ManageBooking() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // Player GCash payment (bookingPaymentService): started here, confirmed only
+  // by PayMongo's verified webhook. The ?paid=1 redirect is never trusted —
+  // after returning we POLL the authoritative status instead.
+  const [paymentState, setPaymentState] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+  const returnedFromPaymongo = searchParams.get("paid") === "1";
+  const polledRef = useRef("");
+
+  const payWithGcash = async () => {
+    if (!booking) return;
+    setPaying(true);
+    setPayError("");
+    try {
+      const { checkoutUrl } = await bookingPaymentService.startBookingCheckout({
+        bookingNumber: booking.reference,
+        guestToken: token,
+      });
+      // Leave the app for PayMongo's hosted checkout. The booking reserves its
+      // slot either way; only the webhook confirms the payment.
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setPayError(
+        err?.message || "Could not start the GCash payment. Please try again.",
+      );
+      setPaying(false);
+    }
+  };
 
   const openBooking = useCallback(async (ref, secureToken) => {
     setLoading(true);
@@ -56,6 +88,44 @@ export function ManageBooking() {
     }
   }, []);
 
+  /**
+   * Poll the authoritative payment state after a ?paid=1 return from PayMongo,
+   * then re-open the booking so the UI shows the server's verdict. Runs once
+   * per visit — openBooking() refreshes `booking`, which would otherwise
+   * restart the polling loop endlessly.
+   */
+  const pollAfterPaymongoReturn = useCallback(
+    (reference, secureToken) => {
+      if (!reference || !secureToken) return;
+      if (polledRef.current === reference) return;
+      polledRef.current = reference;
+      let cancelled = false;
+      bookingPaymentService
+        .waitForBookingPayment({
+          bookingNumber: reference,
+          guestToken: secureToken,
+          timeoutMs: 60000,
+          intervalMs: 3000,
+          onTick: (state) => {
+            if (!cancelled) setPaymentState(state);
+          },
+        })
+        .then(({ paid }) => {
+          if (cancelled) return;
+          if (paid) {
+            setNotice(
+              "Payment received — your booking is confirmed. See you on court!",
+            );
+            openBooking(reference, secureToken);
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    },
+    [openBooking],
+  );
+
   useEffect(() => {
     if (routeReference && token) {
       openBooking(routeReference, token);
@@ -63,6 +133,13 @@ export function ManageBooking() {
       setLoading(false);
     }
   }, [routeReference, token, openBooking]);
+
+  // Kicked off once the booking is open after a ?paid=1 return from PayMongo.
+  useEffect(() => {
+    if (returnedFromPaymongo && booking && token) {
+      return pollAfterPaymongoReturn(booking.reference, token);
+    }
+  }, [returnedFromPaymongo, booking, token, pollAfterPaymongoReturn]);
 
   const findBooking = async (event) => {
     event.preventDefault();
@@ -211,7 +288,11 @@ export function ManageBooking() {
             <div>
               <small>Payment</small>
               <strong>{formatCurrency(booking.amount)}</strong>
-              <span>Pay at court</span>
+              <span>
+                {booking.paymentStatus === "paid"
+                  ? "Paid — GCash / PayMongo"
+                  : "Pay online or at court"}
+              </span>
               <span className={`status status-${booking.paymentStatus}`}>
                 {booking.paymentStatus}
               </span>
@@ -225,6 +306,35 @@ export function ManageBooking() {
 
           {notice && <div className="success-message">{notice}</div>}
           {error && <ErrorMessage message={error} />}
+
+          {/* GCash payment step — guests pay with the booking's secure token.
+              Shown only while the booking is still unpaid and open. */}
+          {token &&
+            booking.paymentStatus !== "paid" &&
+            ["upcoming", "confirmed", "pending"].includes(booking.status) && (
+              <div className="create-account-cta booking-payment-box">
+                <div>
+                  <strong>Pay now with GCash</strong>
+                  <p>
+                    {paymentState
+                      ? bookingPaymentMessage(paymentState)
+                      : "Secure checkout by PayMongo. Your booking is confirmed the moment your payment is verified — no cash needed at the desk."}
+                  </p>
+                </div>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={paying || busy}
+                  onClick={payWithGcash}>
+                  {paying
+                    ? "Opening GCash..."
+                    : returnedFromPaymongo
+                      ? "Check payment again"
+                      : `Pay ${formatCurrency(booking.amount)} with GCash`}
+                </button>
+              </div>
+            )}
+          {payError && <ErrorMessage message={payError} />}
 
           <div className="details-actions">
             {canCancel && (

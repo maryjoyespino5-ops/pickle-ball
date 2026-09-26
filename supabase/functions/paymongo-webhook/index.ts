@@ -1,26 +1,35 @@
-// Supabase Edge Function: paymongo-webhook
+﻿// Supabase Edge Function: paymongo-webhook
 //
-// Receives PayMongo webhook deliveries for the license Payment Link and renews
-// the software subscription for 30 days. Security model:
+// Receives PayMongo webhook deliveries and acts on them server-side. It handles
+// TWO independent flows, routed by which booking the payment belongs to:
+//
+//   1. PLAYER COURT BOOKING â€” when the paid checkout session/payment matches a
+//      booking, the booking is confirmed (payment_status='paid',
+//      booking_status='confirmed') via confirm_booking_from_paymongo(). This is
+//      the ONLY thing that confirms a booking: the frontend redirect is never
+//      trusted.
+//   2. SOFTWARE LICENSE â€” otherwise, the â‚±999/month subscription is renewed
+//      (existing 0020 behaviour, unchanged).
+//
+// Security model:
 //   * The PayMongo signature is verified (HMAC-SHA256) BEFORE anything is
-//     trusted, so a forged request can never renew the license.
-//   * Idempotent: the renewal RPC claims the PayMongo event id, so a replayed
-//     delivery is a no-op.
+//     trusted, so a forged request can confirm nothing.
+//   * Idempotent: both RPCs claim the PayMongo event id in the shared
+//     payment_webhook_events ledger, so a replayed delivery is a no-op.
 //   * Secret keys live only in Edge Function secrets (never in the repo or the
 //     browser). The service-role key is injected by Supabase automatically.
 //
 // Required secrets (set with `supabase secrets set`):
-//   PAYMONO_WEBHOOK_SECRET   — from the PayMongo webhook configuration
-//   PAYMONO_SECRET_KEY       — live/test secret key (used to re-verify a payment)
+//   PAYMONO_WEBHOOK_SECRET   â€” from the PayMongo webhook configuration
+//   PAYMONO_SECRET_KEY       â€” sk_test_... while testing, sk_live_... in prod
 // Optional:
-//   PAYMONO_LINK_REFERENCE   — the link reference to record (e.g. OqqZPix)
+//   PAYMONO_LINK_REFERENCE   â€” the license link reference (e.g. OqqZPix)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("PAYMONO_WEBHOOK_SECRET") ?? "";
-const PAYMONO_SECRET_KEY = Deno.env.get("PAYMONO_SECRET_KEY") ?? "";
 const LINK_REFERENCE = Deno.env.get("PAYMONO_LINK_REFERENCE") ?? "";
 
 const json = (body: unknown, status = 200) =>
@@ -98,25 +107,48 @@ function readPaidEvent(event: Record<string, unknown>) {
   const first = payments[0] ?? {};
   const firstAttrs = (first?.attributes ?? {}) as Record<string, unknown>;
 
-  // PayMongo reports amounts in CENTAVOS (99900 = ₱999.00). Convert to pesos
+  // PayMongo reports amounts in CENTAVOS (99900 = â‚±999.00). Convert to pesos
   // the database understands, matching how the license fee is stored.
   const rawAmount =
     (firstAttrs?.amount as number) ?? (attributes?.amount as number) ?? null;
   const amount =
     typeof rawAmount === "number" ? Math.round(rawAmount) / 100 : null;
 
+  // For checkout_sessions the resource id is the cs_... session id; the actual
+  // payment id arrives under payments[0] or attributes.payment_id.
+  const resourceType = String(resource?.type ?? "");
   const paymentId =
     (first?.id as string) ??
-    (resource?.id as string) ??
+    (resourceType === "payment" ? (resource?.id as string) : null) ??
     (attributes?.id as string) ??
     null;
-  const status = String(firstAttrs?.status ?? attributes?.status ?? "");
-  const linkRef =
-    (attributes?.reference_number as string) ??
-    (attributes?.reference as string) ??
-    LINK_REFERENCE;
 
-  return { type, amount, paymentId, status, linkRef };
+  const sessionId =
+    resourceType === "checkout_session" ? ((resource?.id as string) ?? null) : null;
+
+  const status = String(firstAttrs?.status ?? attributes?.status ?? "");
+
+  // reference_number is set by US when creating the checkout session: the
+  // booking number for a player booking, or the license link reference.
+  const reference = String(
+    (attributes?.reference_number as string) ??
+      (attributes?.reference as string) ??
+      "",
+  ).trim();
+
+  const metadata = (attributes?.metadata ?? {}) as Record<string, unknown>;
+  const metaBookingNumber = String(metadata?.booking_number ?? "").trim();
+
+  return {
+    type,
+    amount,
+    paymentId,
+    sessionId,
+    status,
+    reference,
+    metaBookingNumber,
+    linkRef: reference || LINK_REFERENCE,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -147,7 +179,12 @@ Deno.serve(async (req) => {
   }
 
   const eventId = String((event?.data as Record<string, unknown>)?.id ?? event?.id ?? "");
-  const { type, amount, paymentId, status, linkRef } = readPaidEvent(event);
+  const { type, amount, paymentId, sessionId, status, metaBookingNumber } =
+    readPaidEvent(event);
+
+  // PayMongo reports the instrument used (e.g. "gcash") on the payment
+  // resource. Fall back to the label the booking flow expects.
+  const method = String(event?.method ?? "GCash").trim() || "GCash";
 
   // Only paid events renew the license. Everything else is acknowledged and
   // ignored (so PayMongo stops retrying).
@@ -168,6 +205,49 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
+  // -------------------------------------------------------------------------
+  // Route the paid event to the RIGHT flow.
+  //
+  // Two independent products share this webhook:
+  //   1. PLAYER COURT BOOKINGS  -> confirm_booking_from_paymongo()
+  //        (payment_status='paid' + status='confirmed' for that booking)
+  //   2. SOFTWARE LICENSE       -> subscription_renew_from_paymongo()
+  //
+  // We tell them apart by the reference/metadata WE set when creating the
+  // checkout session: a player booking carries its booking number. Treating a
+  // court payment as a license renewal (the previous behaviour) would both
+  // fail to confirm the booking and wrongly extend the license.
+  // -------------------------------------------------------------------------
+  const bookingNumber = metaBookingNumber || "";
+  const isBookingPayment = bookingNumber.length > 0;
+
+  if (isBookingPayment) {
+    const { data, error } = await supabase.rpc("confirm_booking_from_paymongo", {
+      p_event_id: eventId,
+      p_session_ref: sessionId,
+      p_payment_ref: paymentId,
+      p_amount: amount,
+      p_method: method,
+      p_event_type: type || "checkout_session.payment.paid",
+    });
+
+    if (error) {
+      // 500 so PayMongo retries; the event-id ledger makes the retry safe.
+      return json({ error: error.message }, 500);
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    return json({
+      ok: true,
+      target: "booking",
+      outcome: row?.outcome ?? "unknown",
+      booking: row ?? null,
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Otherwise: software-license renewal (unchanged behaviour).
+  // -------------------------------------------------------------------------
   const { data, error } = await supabase.rpc("subscription_renew_from_paymongo", {
     p_event_id: eventId,
     p_payment_id: paymentId,
@@ -183,5 +263,10 @@ Deno.serve(async (req) => {
   }
 
   const row = Array.isArray(data) ? data[0] : data;
-  return json({ ok: true, outcome: row?.outcome ?? "unknown", license: row ?? null });
+  return json({
+    ok: true,
+    target: "license",
+    outcome: row?.outcome ?? "unknown",
+    license: row ?? null,
+  });
 });

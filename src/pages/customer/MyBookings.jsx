@@ -4,6 +4,7 @@ import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { BookingTable } from "../../components/dashboard/BookingTable";
 import { useBookings } from "../../hooks/useBookings";
+import { bookingPaymentService } from "../../services/bookingPaymentService";
 import { subscriptionService } from "../../services/subscriptionService";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
@@ -16,6 +17,26 @@ export function MyBookings() {
   );
   const [notice, setNotice] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [payingId, setPayingId] = useState("");
+
+  // Signed-in owner pays without a token: the Edge Function resolves the caller
+  // from the Authorization header. Confirmation only ever arrives via the
+  // signed PayMongo webhook — this redirect merely STARTS the payment.
+  const handlePay = async (bookingNumber) => {
+    setPayingId(bookingNumber);
+    setCancelError("");
+    try {
+      const { checkoutUrl } = await bookingPaymentService.startBookingCheckout({
+        bookingNumber,
+      });
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setCancelError(
+        err?.message || "Could not start the GCash payment. Please try again.",
+      );
+      setPayingId("");
+    }
+  };
   // Success notices auto-dismiss after a few seconds (B30).
   useAutoDismiss(justBooked, () => setJustBooked(false));
   useAutoDismiss(notice, () => setNotice(false));
@@ -60,6 +81,8 @@ export function MyBookings() {
             ["upcoming", "confirmed"].includes(booking.status),
           )}
           onCancel={handleCancel}
+          onPay={handlePay}
+          payingId={payingId}
         />
       )}
     </main>

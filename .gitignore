@@ -7,3 +7,6 @@ dist
 qa-*.png
 supabase/.temp/
 .DS_Store
+t2.txt
+t3.txt
+testout.txt
