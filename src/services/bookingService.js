@@ -339,7 +339,20 @@ export async function getAllBookings(filters = {}) {
 export async function updateBooking(id, changes) {
   assertSupabase();
   const payload = {};
-  if (changes.status) payload.status = changes.status;
+  if (changes.status) {
+    // Confirm and complete no longer exist as manual actions (migration 0024):
+    // a verified GCash payment confirms a booking and complete_past_bookings()
+    // completes it once the slot ends. Cancelling — always through
+    // adminCancelBooking() — is the only status write left by hand, so reject
+    // anything else here rather than letting a stray call resurrect the old
+    // workflow.
+    if (changes.status !== BOOKING_STATUSES.CANCELLED) {
+      throw new Error(
+        "Booking confirmation and completion are automatic now. Only cancelling is a manual action.",
+      );
+    }
+    payload.status = changes.status;
+  }
   if (changes.paymentStatus) payload.payment_status = changes.paymentStatus;
   if (changes.paddleId !== undefined) payload.paddle_id = changes.paddleId || null;
   if (changes.courtId) payload.court_id = await resolveCourtId(changes.courtId);
@@ -365,6 +378,52 @@ export async function updateBooking(id, changes) {
   if (error) throw friendlyBookingError(error);
   const profiles = await fetchProfilesMap();
   return toAdminBooking(data, profiles[data.user_id]);
+}
+
+/**
+ * Admin-side cancel — the single supported way to cancel someone's booking
+ * (the admin_cancel_booking RPC: introduced by migration 0024, extended by 0025
+ * to refund a payment that was already settled).
+ *
+ * Why an RPC instead of updateBooking({ status: "cancelled" }): the server
+ * checks is_admin(), refuses an already-cancelled booking, and refunds a
+ * payment that was already settled in the SAME transaction. The client can
+ * therefore never cancel without the money trail following along.
+ *
+ * @param {string} id the booking reference (RB-...)
+ * @returns {Promise<object>} the refreshed admin booking row
+ */
+export async function adminCancelBooking(id) {
+  assertSupabase();
+  if (!id) throw new Error("A booking reference is required.");
+  const { error } = await supabase.rpc("admin_cancel_booking", {
+    p_booking_number: id,
+  });
+  if (error) throw error;
+
+  const row = await getAdminBookingRow(id);
+  if (!row) throw new Error("Booking was not found.");
+  const profiles = await fetchProfilesMap();
+  return toAdminBooking(row, profiles[row.user_id]);
+}
+
+/**
+ * Run the automatic completion pass on demand (the admin "run now").
+ *
+ * complete_past_bookings() (migration 0024) advances every pending/confirmed
+ * booking whose scheduled end time has passed to 'completed'. pg_cron runs it
+ * every five minutes; the admin screens also call it when they load so a
+ * project without pg_cron still shows truthful statuses. Callers treat a
+ * failure as non-fatal — an unscheduled/unmigrated database must never break a
+ * page.
+ *
+ * @returns {Promise<number>} how many bookings were advanced
+ */
+export async function completePastBookings() {
+  assertSupabase();
+  const { data, error } = await supabase.rpc("complete_past_bookings");
+  if (error) throw error;
+  return Number(data) || 0;
 }
 
 export async function createAdminBooking({
@@ -471,6 +530,8 @@ export const bookingService = {
   cancelBooking,
   getAllBookings,
   updateBooking,
+  adminCancelBooking,
+  completePastBookings,
   createAdminBooking,
   rescheduleBooking,
   assignPaddleToBooking,

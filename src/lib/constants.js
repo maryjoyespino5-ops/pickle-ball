@@ -1,9 +1,39 @@
 export const BOOKING_STATUSES = {
-  UPCOMING: "upcoming",
+  PENDING: "pending",
   CONFIRMED: "confirmed",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
 };
+
+/**
+ * The simplified lifecycle, in order. A booking starts PENDING, becomes
+ * CONFIRMED automatically when a GCash payment is verified, and becomes
+ * COMPLETED automatically once its scheduled end time passes (migration 0024,
+ * complete_past_bookings on a 5-minute schedule). CANCELLED is terminal and
+ * reachable from PENDING or CONFIRMED.
+ */
+export const BOOKING_LIFECYCLE = [
+  BOOKING_STATUSES.PENDING,
+  BOOKING_STATUSES.CONFIRMED,
+  BOOKING_STATUSES.COMPLETED,
+];
+
+/**
+ * Payment lifecycle: PENDING -> PAID. A GCash payment sets PAID automatically;
+ * a Pay at Court booking stays PENDING until an admin marks it paid. REFUNDED is
+ * an admin-only terminal state kept for the Refund action.
+ */
+export const PAYMENT_STATUSES = {
+  PENDING: "pending",
+  PAID: "paid",
+  REFUNDED: "refunded",
+};
+
+/** Statuses a customer may still cancel from. */
+export const CANCELLABLE_STATUSES = [
+  BOOKING_STATUSES.PENDING,
+  BOOKING_STATUSES.CONFIRMED,
+];
 export const HOURLY_RATE = 300;
 
 /**

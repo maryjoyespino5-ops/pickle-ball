@@ -78,6 +78,20 @@ export function Bookings() {
     [],
   );
 
+  // Automatic completion (migration 0024) also runs on pg_cron every five
+  // minutes; running the pass once when this page opens keeps the statuses on
+  // screen truthful even on a project without pg_cron. Best-effort — a failure
+  // (for example the migration not being applied yet) must never break the page.
+  useEffect(() => {
+    bookingService
+      .completePastBookings()
+      .then((completed) => {
+        if (completed > 0) debouncedFetch(filters);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     courtService
       .getManagedCourts()
@@ -103,6 +117,10 @@ export function Bookings() {
     if (subscriptionService.isSubscriptionExpiredError(err)) refresh();
     return message;
   };
+  // The only manual write left on the details modal: recording a Pay-at-Court
+  // payment. Cancelling routes to its confirmation dialog, and the write itself
+  // goes through bookingService.adminCancelBooking so the server refunds a
+  // settled payment in the same transaction.
   const update = async (action) => {
     if (!selected || locked) return;
     if (action === "cancelled") {
@@ -111,15 +129,14 @@ export function Bookings() {
     }
     setActionError("");
     try {
-      const next = await bookingService.updateBooking(
-        selected.id,
-        action === "paid" ? { paymentStatus: "paid" } : { status: action },
-      );
+      const next = await bookingService.updateBooking(selected.id, {
+        paymentStatus: "paid",
+      });
       setBookings((items) =>
         items.map((item) => (item.id === next.id ? next : item)),
       );
       setSelected(next);
-      setFeedback(`Booking ${next.id} updated.`);
+      setFeedback(`Booking ${next.id} marked paid.`);
     } catch (err) {
       setActionError(expiredMessage(err, "Could not update this booking."));
     }
@@ -154,31 +171,6 @@ export function Bookings() {
       setActionError(expiredMessage(error, "Could not reschedule this booking."));
     }
   };
-  const action = (type) => (booking) =>
-    type === "cancel"
-      ? setCancelTarget(booking)
-      : type === "reschedule"
-        ? beginReschedule(booking)
-        : updateSelected(booking, type);
-  const updateSelected = async (booking, type) => {
-    if (locked) {
-      setActionError("Your software license has expired. Renew the subscription to continue.");
-      refresh();
-      return;
-    }
-    setActionError("");
-    try {
-      const next = await bookingService.updateBooking(booking.id, {
-        status: type,
-      });
-      setBookings((items) =>
-        items.map((item) => (item.id === next.id ? next : item)),
-      );
-      setFeedback(`Booking ${next.id} marked ${type}.`);
-    } catch (err) {
-      setActionError(expiredMessage(err, "Could not update this booking."));
-    }
-  };
   const cancel = async () => {
     if (!cancelTarget) return;
     if (locked) {
@@ -188,13 +180,10 @@ export function Bookings() {
     }
     setActionError("");
     try {
-      const next = await bookingService.updateBooking(cancelTarget.id, {
-        status: "cancelled",
-        paymentStatus:
-          cancelTarget.paymentStatus === "paid"
-            ? "refunded"
-            : cancelTarget.paymentStatus,
-      });
+      // Server-side cancel (admin_cancel_booking, migrations 0024/0025): the RPC
+      // refuses an already cancelled booking and refunds a settled payment in
+      // one transaction, so the booking and its money trail can never disagree.
+      const next = await bookingService.adminCancelBooking(cancelTarget.id);
       setBookings((items) =>
         items.map((item) => (item.id === next.id ? next : item)),
       );
@@ -246,7 +235,7 @@ export function Bookings() {
           value={filters.status}
           onChange={(event) => setFilter("status", event.target.value)}>
           <option value="all">All statuses</option>
-          <option value="upcoming">Upcoming</option>
+          <option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
@@ -273,10 +262,8 @@ export function Bookings() {
             bookings={bookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
             readOnly={locked}
             onView={setSelected}
-            onCancel={action("cancel")}
-            onConfirm={action("confirmed")}
-            onComplete={action("completed")}
-            onReschedule={action("reschedule")}
+            onCancel={setCancelTarget}
+            onReschedule={beginReschedule}
           />
           <Pagination
             page={page}

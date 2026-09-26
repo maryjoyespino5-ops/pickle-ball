@@ -7,6 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useBookings } from "../../hooks/useBookings";
 import { useCourts } from "../../hooks/useCourts";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
+import { BOOKING_STATUSES } from "../../lib/constants";
 
 function favoriteCourt(bookings, courts) {
   const counts = {};
@@ -26,8 +27,10 @@ export function Dashboard() {
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const next =
-    bookings.find((booking) => booking.status === "upcoming") ||
-    bookings.find((booking) => booking.status === "confirmed");
+    bookings.find((booking) => booking.status === BOOKING_STATUSES.PENDING) ||
+    bookings.find(
+      (booking) => booking.status === BOOKING_STATUSES.CONFIRMED,
+    );
   return (
     <main className="dashboard-page">
       <div className="dashboard-heading">
@@ -46,7 +49,7 @@ export function Dashboard() {
         <StatCard label="Total bookings" value={bookings.length} />
         <StatCard
           label="Hours played"
-          value={`${bookings.filter((item) => item.status === "completed").length}h`}
+          value={`${bookings.filter((item) => item.status === BOOKING_STATUSES.COMPLETED).length}h`}
         />
         <StatCard label="Favorite court" value={favoriteCourt(bookings, courts)} />
       </div>
@@ -69,7 +72,7 @@ export function Dashboard() {
             <BookingCard booking={next} />
           ) : (
             <div className="empty-panel">
-              No upcoming bookings yet.{" "}
+              No bookings yet.{" "}
               <Link to="/book">Book your first game.</Link>
             </div>
           )}

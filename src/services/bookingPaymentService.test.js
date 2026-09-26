@@ -164,7 +164,7 @@ describe("getBookingPaymentStatus", () => {
       data: [
         {
           payment_status: "pending",
-          booking_status: "upcoming",
+          booking_status: "pending",
           paymongo_reference: null,
           paid_at: null,
         },
@@ -182,7 +182,7 @@ describe("getBookingPaymentStatus", () => {
     });
     expect(state).toEqual({
       paymentStatus: "pending",
-      bookingStatus: "upcoming",
+      bookingStatus: "pending",
       reference: null,
       paidAt: null,
     });
@@ -229,7 +229,7 @@ describe("getBookingPaymentStatus", () => {
 describe("waitForBookingPayment", () => {
   it("resolves paid:true as soon as the webhook lands", async () => {
     const statuses = [
-      { payment_status: "pending", booking_status: "upcoming" },
+      { payment_status: "pending", booking_status: "pending" },
       { payment_status: "paid", booking_status: "confirmed" },
     ];
     let call = 0;
@@ -254,7 +254,7 @@ describe("waitForBookingPayment", () => {
 
   it("returns paid:false on the timeout deadline without giving up early", async () => {
     __mocks.rpc.mockResolvedValue({
-      data: [{ payment_status: "pending", booking_status: "upcoming" }],
+      data: [{ payment_status: "pending", booking_status: "pending" }],
       error: null,
     });
 
@@ -307,7 +307,7 @@ describe("waitForBookingPayment", () => {
 
   it("always polls at least once even with a zero timeout", async () => {
     __mocks.rpc.mockResolvedValue({
-      data: [{ payment_status: "pending", booking_status: "upcoming" }],
+      data: [{ payment_status: "pending", booking_status: "pending" }],
       error: null,
     });
 
@@ -349,7 +349,7 @@ describe("bookingPaymentMessage", () => {
     expect(
       bookingPaymentMessage({
         paymentStatus: "pending",
-        bookingStatus: "upcoming",
+        bookingStatus: "pending",
       }),
     ).toMatch(/Waiting for PayMongo/);
   });
@@ -385,8 +385,8 @@ describe("virtual end-to-end: guest booking payment journey", () => {
     //    emulates the webhook committing mid-poll.
     vi.stubGlobal("fetch", vi.fn()); // no more checkout calls
     const timeline = [
-      { payment_status: "pending", booking_status: "upcoming" },
-      { payment_status: "pending", booking_status: "upcoming" },
+      { payment_status: "pending", booking_status: "pending" },
+      { payment_status: "pending", booking_status: "pending" },
       { payment_status: "paid", booking_status: "confirmed" },
     ];
     let step = 0;

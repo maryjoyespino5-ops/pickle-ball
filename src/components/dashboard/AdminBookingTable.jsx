@@ -1,11 +1,10 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
+import { BOOKING_STATUSES, CANCELLABLE_STATUSES } from "../../lib/constants";
 export function AdminBookingTable({
   bookings = [],
   onView,
   onCancel,
-  onConfirm,
-  onComplete,
   onReschedule,
   busy = false,
   readOnly = false,
@@ -78,30 +77,19 @@ export function AdminBookingTable({
                   <button disabled={busy} onClick={() => onView(booking)}>
                     View
                   </button>
-                  {!readOnly && booking.status === "upcoming" && (
-                    <button disabled={busy} onClick={() => onConfirm(booking)}>
-                      Confirm
-                    </button>
-                  )}
-                  {!readOnly && booking.status === "confirmed" && (
-                    <button
-                      disabled={busy}
-                      onClick={() => onComplete(booking)}>
-                      Complete
-                    </button>
-                  )}
-                  {!readOnly && ["upcoming", "confirmed"].includes(booking.status) && (
+                  {!readOnly && CANCELLABLE_STATUSES.includes(booking.status) && (
                     <button
                       disabled={busy}
                       onClick={() => onReschedule(booking)}>
                       Reschedule
                     </button>
                   )}
-                  {!readOnly && booking.status !== "cancelled" && (
-                    <button disabled={busy} onClick={() => onCancel(booking)}>
-                      Cancel
-                    </button>
-                  )}
+                  {!readOnly &&
+                    booking.status !== BOOKING_STATUSES.CANCELLED && (
+                      <button disabled={busy} onClick={() => onCancel(booking)}>
+                        Cancel
+                      </button>
+                    )}
                 </div>
               </td>
             </tr>

@@ -43,7 +43,7 @@ export function AdminTopbar() {
   const loadNotifications = useCallback(() => {
     let mounted = true;
     bookingService
-      .getAllBookings({ date: todayISO(), status: "upcoming" })
+      .getAllBookings({ date: todayISO(), status: "pending" })
       .then((rows) => {
         if (!mounted) return;
         setTodayPending(rows.slice(0, 5));
@@ -96,8 +96,8 @@ export function AdminTopbar() {
           className="notification-button"
           aria-label={
             pendingCount > 0
-              ? `${pendingCount} upcoming bookings today`
-              : "No upcoming bookings today"
+              ? `${pendingCount} bookings awaiting confirmation today`
+              : "No bookings awaiting confirmation today"
           }
           onClick={() =>
             setOpen(open === "notifications" ? null : "notifications")
@@ -115,7 +115,7 @@ export function AdminTopbar() {
             {todayPending.length === 0 ? (
               <p>
                 <b>All caught up</b>
-                <small>No upcoming bookings left today.</small>
+                <small>Every booking today is confirmed or completed.</small>
               </p>
             ) : (
               todayPending.map((booking) => (

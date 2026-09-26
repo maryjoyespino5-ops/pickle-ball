@@ -65,10 +65,10 @@ describe("BookingTable pay action", () => {
     time: "09:00",
     duration: 1,
     amount: 300,
-    status: "upcoming",
+    status: "pending",
   };
 
-  it("shows Pay with GCash for an unpaid upcoming booking", () => {
+  it("shows Pay with GCash for an unpaid pending booking", () => {
     render(
       <BookingTable
         bookings={[{ ...base, id: "RB-1", paymentStatus: "pending" }]}
@@ -149,7 +149,7 @@ describe("BookingTable pay action", () => {
           {
             ...base,
             id: "RB-5",
-            status: "upcoming",
+            status: "pending",
             paymentStatus: "pending",
             isPaid: false,
             isConfirmed: false,
@@ -170,7 +170,7 @@ describe("ManageBooking GCash step", () => {
     time: "09:00",
     duration: 2,
     amount: 600,
-    status: "upcoming",
+    status: "pending",
     paymentStatus: "pending",
     customerName: "Juan",
     customerPhone: "0917",

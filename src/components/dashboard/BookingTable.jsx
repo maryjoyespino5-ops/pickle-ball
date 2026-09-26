@@ -1,5 +1,6 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTime12 } from "../../utils/dateUtils";
+import { CANCELLABLE_STATUSES } from "../../lib/constants";
 export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) {
   return (
     <div className="table-wrap">
@@ -49,7 +50,7 @@ export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) 
                 )}
               </td>
               <td className="table-action-cell">
-                {["upcoming", "confirmed"].includes(booking.status) &&
+                {CANCELLABLE_STATUSES.includes(booking.status) &&
                   booking.paymentStatus !== "paid" &&
                   onPay && (
                     <button
@@ -61,7 +62,7 @@ export function BookingTable({ bookings = [], onCancel, onPay, payingId = "" }) 
                         : "Pay with GCash"}
                     </button>
                   )}
-                {["upcoming", "confirmed"].includes(booking.status) && (
+                {CANCELLABLE_STATUSES.includes(booking.status) && (
                   <button
                     className="text-button"
                     onClick={() => onCancel(booking.id)}>

@@ -16,6 +16,7 @@ import { useRealtimeBookings } from "../../hooks/useRealtimeBookings";
 import { useSubscriptionLock } from "../../hooks/useSubscriptionLock";
 import { SubscriptionLockedBanner } from "../../components/common/SubscriptionLockedBanner";
 import { subscriptionService } from "../../services/subscriptionService";
+import { BOOKING_STATUSES } from "../../lib/constants";
 
 function toIsoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -38,6 +39,10 @@ export function Dashboard() {
   const load = async () => {
     try {
       const today = toIsoDate(new Date());
+      // Automatic completion (migration 0024) is scheduled on pg_cron; running
+      // the pass when this dashboard opens keeps "Today's bookings" truthful
+      // even where pg_cron is unavailable. Best-effort — never block the page.
+      await bookingService.completePastBookings().catch(() => 0);
       const [nextBookings, nextCourts] = await Promise.all([
         bookingService.getAllBookings({ date: today }),
         courtService.getManagedCourts(),
@@ -62,10 +67,11 @@ export function Dashboard() {
     setActionError("");
     setBusy(true);
     try {
-      const next = await bookingService.updateBooking(
-        booking.id,
-        action === "paid" ? { paymentStatus: "paid" } : { status: action },
-      );
+      // Recording a Pay-at-Court payment is the only manual write left here:
+      // confirming and completing a booking are automatic (migration 0024).
+      const next = await bookingService.updateBooking(booking.id, {
+        paymentStatus: "paid",
+      });
       setBookings((items) =>
         items.map((item) => (item.id === next.id ? next : item)),
       );
@@ -82,9 +88,9 @@ export function Dashboard() {
     setActionError("");
     setBusy(true);
     try {
-      const next = await bookingService.updateBooking(cancelTarget.id, {
-        status: "cancelled",
-      });
+      // Server-side cancel (0024, extended by 0025): refuses an already
+      // cancelled booking and refunds a settled payment in the same transaction.
+      const next = await bookingService.adminCancelBooking(cancelTarget.id);
       setBookings((items) =>
         items.map((item) => (item.id === next.id ? next : item)),
       );
@@ -190,8 +196,6 @@ export function Dashboard() {
           readOnly={locked}
           onView={setSelected}
           onCancel={setCancelTarget}
-          onConfirm={(booking) => update("confirmed", booking)}
-          onComplete={(booking) => update("completed", booking)}
           onReschedule={() => navigate("/admin/bookings")}
         />
       </section>
@@ -228,7 +232,7 @@ export function Dashboard() {
       {selected && (
         <Modal
           title={
-            selected.status === "confirmed"
+            selected.status === BOOKING_STATUSES.CONFIRMED
               ? "Booking details"
               : "Manage booking"
           }

@@ -1454,10 +1454,6 @@ select {
   padding: 5px 8px;
   text-transform: uppercase;
 }
-.status-upcoming {
-  background: #d5eddc;
-  color: #3a8352;
-}
 .status-completed {
   background: #dcebe2;
   color: #446b5c;

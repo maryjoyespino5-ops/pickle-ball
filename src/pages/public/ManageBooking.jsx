@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { Button } from "../../components/common/Button";
 import { ErrorMessage } from "../../components/common/ErrorMessage";
 import { guestBookingService } from "../../services/guestBookingService";
+import { CANCELLABLE_STATUSES } from "../../lib/constants";
 import {
   bookingPaymentService,
   bookingPaymentMessage,
@@ -227,9 +228,7 @@ export function ManageBooking() {
     ? `/booking/${booking.reference}${token ? `?t=${token}` : ""}`
     : "/booking";
   const canCancel =
-    booking &&
-    !booking.isClaimed &&
-    ["upcoming", "confirmed"].includes(booking.status);
+    booking && !booking.isClaimed && CANCELLABLE_STATUSES.includes(booking.status);
   const showLookup = !booking && !loading;
   const createAccountPath = booking
     ? `/register?${new URLSearchParams({
@@ -326,7 +325,7 @@ export function ManageBooking() {
               Shown only while the booking is still unpaid and open. */}
           {token &&
             booking.paymentStatus !== "paid" &&
-            ["upcoming", "confirmed", "pending"].includes(booking.status) && (
+            CANCELLABLE_STATUSES.includes(booking.status) && (
               <div className="create-account-cta booking-payment-box">
                 <div>
                   <strong>Pay now with GCash</strong>

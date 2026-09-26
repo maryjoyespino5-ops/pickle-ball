@@ -8,6 +8,7 @@ import { bookingPaymentService } from "../../services/bookingPaymentService";
 import { subscriptionService } from "../../services/subscriptionService";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
+import { CANCELLABLE_STATUSES } from "../../lib/constants";
 export function MyBookings() {
   const { bookings, loading, error, cancel, refetch } = useBookings();
   useScrollReveal();
@@ -126,7 +127,7 @@ export function MyBookings() {
       ) : (
         <BookingTable
           bookings={bookings.filter((booking) =>
-            ["upcoming", "confirmed"].includes(booking.status),
+            CANCELLABLE_STATUSES.includes(booking.status),
           )}
           onCancel={handleCancel}
           onPay={handlePay}

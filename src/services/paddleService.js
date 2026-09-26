@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { BOOKING_STATUSES } from "../lib/constants";
 import { todayISO } from "../utils/dateUtils";
 
 function assertSupabase() {
@@ -132,7 +133,7 @@ export async function getPaddles() {
       // convention bookings are created with) — NOT Manila time, which
       // filtered out legitimately linked bookings for off-Manila viewers.
       .gte("booking_date", todayISO())
-      .in("status", ["upcoming", "confirmed"])
+      .in("status", [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.CONFIRMED])
       .order("booking_date")
       .order("start_time"),
     supabase.from("profiles").select("id, full_name, email"),

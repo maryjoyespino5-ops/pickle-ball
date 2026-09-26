@@ -1,6 +1,16 @@
 import { formatCurrency } from "../../utils/currencyUtils";
 import { formatTimeRange12 } from "../../utils/dateUtils";
-export function BookingDetails({ booking, onAction, onReschedule, readOnly = false }) {
+import {
+  BOOKING_STATUSES,
+  CANCELLABLE_STATUSES,
+  PAYMENT_STATUSES,
+} from "../../lib/constants";
+export function BookingDetails({
+  booking,
+  onAction,
+  onReschedule,
+  readOnly = false,
+}) {
   return (
     <div className="booking-details">
       <div className="details-id">
@@ -15,7 +25,9 @@ export function BookingDetails({ booking, onAction, onReschedule, readOnly = fal
           <span>{booking.phone}</span>
           <span
             className={`booking-source ${booking.isGuest ? "guest" : "account"}`}>
-            {booking.isGuest ? "Guest booking (no account)" : "Registered account"}
+            {booking.isGuest
+              ? "Guest booking (no account)"
+              : "Registered account"}
           </span>
         </div>
         <div>
@@ -40,30 +52,23 @@ export function BookingDetails({ booking, onAction, onReschedule, readOnly = fal
           <span>Created {booking.createdAt}</span>
         </div>
       </div>
+      {/* Confirm and Complete were removed with the simplified lifecycle
+          (migration 0024): a verified GCash payment confirms a booking and
+          complete_past_bookings() completes it once the slot ends. What is left
+          for a human is recording a Pay-at-Court payment, rescheduling, and
+          cancelling. */}
       <div className="details-actions">
-        {!readOnly && booking.status === "upcoming" && (
-          <button className="button" onClick={() => onAction("confirmed")}>
-            Confirm booking
-          </button>
-        )}
-        {!readOnly && booking.paymentStatus === "pending" && (
+        {!readOnly && booking.paymentStatus === PAYMENT_STATUSES.PENDING && (
           <button className="button outline" onClick={() => onAction("paid")}>
             Mark paid
           </button>
         )}
-        {!readOnly && booking.status === "confirmed" && (
-          <button
-            className="button outline"
-            onClick={() => onAction("completed")}>
-            Mark completed
-          </button>
-        )}
-        {!readOnly && booking.status !== "cancelled" && (
+        {!readOnly && booking.status !== BOOKING_STATUSES.CANCELLED && (
           <button className="text-button" onClick={() => onAction("cancelled")}>
             Cancel booking
           </button>
         )}
-        {!readOnly && ["upcoming", "confirmed"].includes(booking.status) && (
+        {!readOnly && CANCELLABLE_STATUSES.includes(booking.status) && (
           <button className="button outline" onClick={onReschedule}>
             Reschedule
           </button>

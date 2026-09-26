@@ -3,6 +3,7 @@ import { Modal } from "../../components/common/Modal";
 import { QrCode } from "../../components/qr/QrCode";
 import { useAutoDismiss } from "../../hooks/useAutoDismiss";
 import { useNow } from "../../hooks/useNow";
+import { BOOKING_STATUSES } from "../../lib/constants";
 import { bookingService } from "../../services/bookingService";
 import { paddleService } from "../../services/paddleService";
 import { formatTime12, todayISO } from "../../utils/dateUtils";
@@ -42,7 +43,7 @@ function liveStatus(paddle, now) {
 const STATUS_META = {
   available: { label: "Available", cls: "status-active" },
   in_use: { label: "In Use", cls: "status-pending" },
-  reserved: { label: "Reserved", cls: "status-upcoming" },
+  reserved: { label: "Reserved", cls: "status-pending" },
   disabled: { label: "Disabled", cls: "status-inactive" },
 };
 
@@ -180,7 +181,11 @@ export function QRCodes() {
     try {
       const rows = await bookingService.getAllBookings({ date: todayISO() });
       setLinkBookings(
-        rows.filter((b) => ["upcoming", "confirmed"].includes(b.status)),
+        rows.filter((b) =>
+          [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.CONFIRMED].includes(
+            b.status,
+          ),
+        ),
       );
     } catch (err) {
       setActionError(err.message || "Could not load today's bookings.");
@@ -531,7 +536,7 @@ return (
           )}
           {linkBookings.length === 0 ? (
             <p className="empty-panel">
-              No upcoming or confirmed bookings today.
+              No pending or confirmed bookings today.
             </p>
           ) : (
             <div className="qr-link-list">
