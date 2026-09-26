@@ -24,6 +24,8 @@ vi.mock("../lib/supabase", () => ({
 import {
   adminCancelBooking,
   completePastBookings,
+  getAllBookings,
+  getMyBookings,
   updateBooking,
 } from "./bookingService";
 
@@ -136,5 +138,92 @@ describe("completePastBookings", () => {
       error: new Error("function public.complete_past_bookings() does not exist"),
     });
     await expect(completePastBookings()).rejects.toThrow(/does not exist/);
+  });
+});
+
+/**
+ * The payment METHOD on a booking.
+ *
+ * A paid booking has to say how it was paid: "Paid · GCash" when the player paid
+ * online, "Paid · Pay at Court" when an admin took cash at the desk.
+ *
+ * Both booking mappers used `row.payments?.[0]`, but PostgREST returns a
+ * one-to-one embed (bookings -> payments) as a plain OBJECT, not an array. The
+ * index read was therefore always undefined: the admin mapper silently fell
+ * back to "Pay at Court" and mislabelled every real GCash payment, while the
+ * player mapper had no method at all. These pin both embed shapes.
+ */
+describe("payment method on a booking", () => {
+  const withPayments = (payments) => ({ ...bookingRow, payments });
+
+  /** Row-list response; the mappers call .map() on the result. */
+  const rowsWith = (payments) => [withPayments(payments)];
+
+  it("reads the method when PostgREST embeds payments as an OBJECT", async () => {
+    // This is the real shape returned by the live API for bookings -> payments.
+    fromMock.mockImplementation((table) =>
+      query(
+        table === "profiles"
+          ? { data: [], error: null }
+          : { data: rowsWith({ method: "GCash" }), error: null },
+      ),
+    );
+
+    const [player] = await getMyBookings();
+    expect(player.paymentMethod).toBe("GCash");
+  });
+
+  it("reads the method when PostgREST embeds payments as an ARRAY", async () => {
+    fromMock.mockImplementation((table) =>
+      query(
+        table === "profiles"
+          ? { data: [], error: null }
+          : { data: rowsWith([{ method: "GCash" }]), error: null },
+      ),
+    );
+
+    const [player] = await getMyBookings();
+    expect(player.paymentMethod).toBe("GCash");
+  });
+
+  it("keeps a desk payment labelled 'Pay at Court'", async () => {
+    fromMock.mockImplementation((table) =>
+      query(
+        table === "profiles"
+          ? { data: [], error: null }
+          : { data: rowsWith({ method: "Pay at Court" }), error: null },
+      ),
+    );
+
+    const [player] = await getMyBookings();
+    expect(player.paymentMethod).toBe("Pay at Court");
+  });
+
+  it("claims no method on the player booking when there is no payment row", async () => {
+    fromMock.mockImplementation((table) =>
+      query(
+        table === "profiles"
+          ? { data: [], error: null }
+          : { data: rowsWith(null), error: null },
+      ),
+    );
+
+    const [player] = await getMyBookings();
+    // Must NOT default to "Pay at Court" here: nothing has been collected, so
+    // naming a method would be a lie. The badge only renders once paid anyway.
+    expect(player.paymentMethod).toBe("");
+  });
+
+  it("reports GCash to the admin too, not a silent 'Pay at Court' fallback", async () => {
+    fromMock.mockImplementation((table) =>
+      query(
+        table === "profiles"
+          ? { data: [], error: null }
+          : { data: rowsWith({ method: "GCash" }), error: null },
+      ),
+    );
+
+    const [adminBooking] = await getAllBookings();
+    expect(adminBooking.paymentMethod).toBe("GCash");
   });
 });

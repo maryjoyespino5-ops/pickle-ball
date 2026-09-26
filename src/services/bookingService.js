@@ -48,8 +48,27 @@ function assertFutureSlot({ date, time }) {
   }
 }
 
+/**
+ * Read the one payment row embedded on a booking.
+ *
+ * PostgREST returns an embedded child as an OBJECT when the relationship is
+ * one-to-one (bookings -> payments always is), and as an ARRAY when it is
+ * one-to-many. Both the admin and the player mapper used `payments?.[0]`,
+ * which is `undefined` for the object shape — so a GCash payment silently
+ * rendered as "Paid · Pay at Court" in every booking table.
+ *
+ * Normalise both shapes here so a mapper can never silently lose the method
+ * again.
+ */
+function firstPayment(row) {
+  const p = row?.payments;
+  if (Array.isArray(p)) return p[0] || null;
+  return p || null;
+}
+
 /** Map a bookings row (with joined court name) into the shape the UI uses. */
 function toAppBooking(row) {
+  const payment = firstPayment(row);
   return {
     id: row.booking_number,
     courtId: row.court_id,
@@ -62,10 +81,15 @@ function toAppBooking(row) {
     amount: Number(row.amount),
     status: row.status,
     paymentStatus: row.payment_status,
-    // Derived flags so the player dashboard renders PAID + CONFIRMED from one
-    // place. A GCash payment sets payment_status='paid' and status='confirmed'
-    // in the same transaction (0021), so these two agree after a webhook
-    // confirmation or a reconciliation.
+    // How the money was collected, so My Bookings can say "Paid · GCash"
+    // instead of a bare "paid". Empty (not "Pay at Court") when unknown: the
+    // payment badge only renders once something is actually paid, and claiming a
+    // method for an unpaid booking would be a lie.
+    paymentMethod: payment?.method || "",
+    // Derived flags so the player dashboard renders the settled state from one
+    // place. Since 0029 a payment settles MONEY ONLY — bookings.status is left
+    // alone and advances by itself when the slot ends — so isConfirmed tracks the
+    // game, never the payment.
     isPaid: row.payment_status === "paid",
     isConfirmed: ["confirmed", "completed"].includes(row.status),
     createdAt: row.created_at,
@@ -73,9 +97,11 @@ function toAppBooking(row) {
 }
 
 const bookingSelect =
-  "id, booking_number, user_id, court_id, paddle_id, booking_date, start_time, duration_hours, amount, status, payment_status, created_at, courts(name), paddles(paddle_number, name)";
+  "id, booking_number, user_id, court_id, paddle_id, booking_date, start_time, duration_hours, amount, status, payment_status, created_at, courts(name), paddles(paddle_number, name), payments(method)";
 
-const adminSelect = `${bookingSelect}, customer_name, customer_email, customer_phone, payments(method)`;
+// payments(method) already arrives via bookingSelect; listing it again here
+// would make PostgREST reject the duplicate embed.
+const adminSelect = `${bookingSelect}, customer_name, customer_email, customer_phone`;
 
 /* -------------------------------------------------------------------------
  * Customer-side (Supabase-backed, RLS limits rows to the signed-in customer)
@@ -202,6 +228,7 @@ export async function resolveCourtId(value) {
 }
 
 function toAdminBooking(row, profile) {
+  const payment = firstPayment(row);
   return {
     id: row.booking_number,
     userId: row.user_id,
@@ -226,7 +253,10 @@ function toAdminBooking(row, profile) {
     amount: Number(row.amount),
     status: row.status,
     paymentStatus: row.payment_status,
-    paymentMethod: row.payments?.[0]?.method || "Pay at Court",
+    // Same one-to-one embed as the player mapper — see firstPayment(). The old
+    // `row.payments?.[0]` was undefined here, so EVERY paid booking fell back to
+    // "Pay at Court" and a GCash payment was mislabelled in the admin tables.
+    paymentMethod: payment?.method || "Pay at Court",
     // Admin-side derived flags: a booking paid online reads PAID + CONFIRMED
     // in the admin tables without the page recomputing it.
     isPaid: row.payment_status === "paid",
