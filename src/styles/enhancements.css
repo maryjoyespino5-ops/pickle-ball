@@ -1002,3 +1002,75 @@ body > #root > .ui-loading {
     width: 100%;
   }
 }
+/* =========================================================================
+   Horizontal margin consistency — public site (Home, Courts, Availability,
+   Pricing, Contact, Login + other public pages sharing the layout).
+   -------------------------------------------------------------------------
+   Root cause: header/footer/hero used max-width 1280px + 5vw fluid gutters
+   while the rest of the public content used 1140px + 35px fixed gutters, so
+   left/right content edges never lined up. Mobile mixed 20px vs 16px vs 12px.
+   Fix: standardize ONLY horizontal geometry (content max-width + left/right
+   gutters). Vertical spacing, colors, typography, component order, and all
+   functionality are untouched. Note: .site-header keeps its sticky full-width
+   bar + background; only its inner flex content is capped so its links and
+   buttons line up with the page content. Intentional full-width dark bands
+   (.availability-preview) keep their background; their inner copy/cards align
+   with the rest of the site. Admin/customer shells are intentionally untouched
+   (separate app layouts, not public pages).
+   ========================================================================= */
+:root {
+  --page-max: 1140px;
+  --page-gutter: 35px;
+}
+/* One shared centered container for every public content block.
+   (Footer shares the page background so capping it is invisible.
+   The dark availability band keeps its capped card look — only its
+   side gutters are standardized.) */
+.home-hero,
+.intro-section,
+.home-section,
+.availability-preview,
+.pricing-teaser,
+.guest-booking,
+.page-wrap,
+.auth-page,
+.site-footer {
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--page-max);
+  padding-left: var(--page-gutter);
+  padding-right: var(--page-gutter);
+  width: 100%;
+}
+/* Sticky header keeps its full-width bar + background edge-to-edge; only its
+   inner content edges are aligned to the same 1070px content column
+   (1140px - 2x35px gutters) as the containers above. */
+.site-header {
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+  max-width: none;
+  padding-left: max(var(--page-gutter), calc((100vw - 1070px) / 2));
+  padding-right: max(var(--page-gutter), calc((100vw - 1070px) / 2));
+  width: 100%;
+}
+/* Tablet / mobile: one shared 20px side gutter (vertical rhythm untouched). */
+@media (max-width: 760px) {
+  :root {
+    --page-gutter: 20px;
+  }
+  .home-hero,
+  .intro-section,
+  .home-section,
+  .availability-preview,
+  .pricing-teaser,
+  .guest-booking,
+  .page-wrap,
+  .auth-page,
+  .site-header,
+  .site-footer {
+    padding-left: var(--page-gutter);
+    padding-right: var(--page-gutter);
+  }
+}
