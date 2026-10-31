@@ -85,7 +85,7 @@ export function AdminTopbar() {
         <img
           className="admin-topbar-logo"
           src="/favicon.png"
-          alt="Alicayard Pickle Ball logo"
+          alt="Your Pickle Ball logo"
         />
         <span className="admin-kicker">ADMIN WORKSPACE</span>
         <h1>{titles[pathname] || "Dashboard"}</h1>

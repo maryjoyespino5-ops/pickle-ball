@@ -5,7 +5,7 @@ export function HeroShowcase() {
         <img
           className="showcase-img"
           src="/pic5.png"
-          alt="Pickleball court at Alicayard Pickle Ball"
+          alt="Pickleball court at Your Pickle Ball"
           draggable="false"
         />
 
@@ -14,7 +14,7 @@ export function HeroShowcase() {
 
         {/* Overlay copy */}
         <div className="showcase-copy">
-          <span className="showcase-eyebrow">Alicayard Pickle Ball</span>
+          <span className="showcase-eyebrow">Your Pickle Ball</span>
           <span className="showcase-label">
             Pickleball
             <br />

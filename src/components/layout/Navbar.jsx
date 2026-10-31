@@ -19,15 +19,15 @@ export function Navbar() {
         <img
           className="brand-mark"
           src="/favicon.png"
-          alt="Alicayard Pickle Ball logo"
+          alt="Your Pickle Ball logo"
         />
         {/* Full name on wide screens; a short label on phones so the header
             stays one compact row instead of wrapping or clipping the name.
             Only one of the two is ever visible, so the link's accessible name
-            stays exactly "Alicayard Pickle Ball". */}
-        <span className="brand-full">Alicayard Pickle Ball</span>
+            stays exactly "Your Pickle Ball". */}
+        <span className="brand-full">Your Pickle Ball</span>
         <span className="brand-short" aria-hidden="true">
-          Alicayard
+          Your
         </span>
       </Link>
       <nav

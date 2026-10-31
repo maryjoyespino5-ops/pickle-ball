@@ -30,7 +30,7 @@ export function Contact() {
       const body = encodeURIComponent(
         `Name: ${form.name.trim()}\nEmail: ${form.email.trim()}\n\n${form.message.trim()}`,
       );
-      window.location.href = `mailto:hello@alicayardpickleball.ph?subject=${subject}&body=${body}`;
+      window.location.href = `mailto:hello@yourpickleball.ph?subject=${subject}&body=${body}`;
       setSent(true);
       setForm({ name: "", email: "", message: "" });
     } finally {
@@ -54,7 +54,7 @@ export function Contact() {
       <div className="contact-grid">
         <div className="contact-details">
           <span className="section-index">COME FIND US</span>
-          <strong>Alicayard Pickle Ball</strong>
+          <strong>Your Pickle Ball</strong>
           <p>
             18 Palm Avenue
             <br />
@@ -62,7 +62,7 @@ export function Contact() {
           </p>
           <span className="section-index">GET IN TOUCH</span>
           <p>
-            hello@alicayardpickleball.ph
+            hello@yourpickleball.ph
             <br />
             +63 917 555 0188
           </p>

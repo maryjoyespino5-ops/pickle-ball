@@ -62,7 +62,7 @@ export function PaddleStatus() {
     return (
       <main className="paddle-status-page">
         <section className="paddle-status-card">
-          <img className="paddle-status-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
+          <img className="paddle-status-mark" src="/favicon.png" alt="Your Pickle Ball logo" />
           <h1>Paddle not found</h1>
           <p>This QR code does not match a registered paddle. Ask the front desk for help.</p>
         </section>
@@ -94,7 +94,7 @@ export function PaddleStatus() {
   return (
     <main className="paddle-status-page">
       <section className="paddle-status-card" aria-live="polite">
-        <img className="paddle-status-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
+        <img className="paddle-status-mark" src="/favicon.png" alt="Your Pickle Ball logo" />
         <span className="admin-kicker">PICKLEBALL PADDLE</span>
         <h1>Paddle #{data.paddle_number}</h1>
         {data.name && <p className="paddle-status-name">{data.name}</p>}

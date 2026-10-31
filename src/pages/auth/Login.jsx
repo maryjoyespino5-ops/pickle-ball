@@ -63,7 +63,7 @@ export function Login() {
           </Button>
         </form>
         <p className="auth-switch">
-          New to Alicayard Pickle Ball? <Link to="/register">Create an account</Link>
+          New to Your Pickle Ball? <Link to="/register">Create an account</Link>
         </p>
       </div>
       <div className="auth-art">

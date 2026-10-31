@@ -1,4 +1,4 @@
-﻿﻿# Alicayard Pickle Ball — Full System Analysis, Bugs & Improvement Plan
+﻿﻿# Your Pickle Ball — Full System Analysis, Bugs & Improvement Plan
 
 > Generated from a deep read of the entire repository (React + Vite front end, Supabase/Postgres back end, RLS policies, migrations, styles, and every screen/button).
 >
@@ -8,7 +8,7 @@
 
 ## 1. What the system is
 
-A single-page booking application for a small pickleball facility ("Alicayard Pickle Ball", 2 courts, Manila). It has three front ends in **one codebase**:
+A single-page booking application for a small pickleball facility ("Your Pickle Ball", 2 courts, Manila). It has three front ends in **one codebase**:
 
 | Area                  | Users                  | Paths                                                                      |
 | --------------------- | ---------------------- | -------------------------------------------------------------------------- |

@@ -52,7 +52,7 @@ function CustomerLayout() {
       <CustomerSidebar />
       <div className="customer-content">
         <div className="mobile-customer-header">
-          <img className="brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
+          <img className="brand-mark" src="/favicon.png" alt="Your Pickle Ball logo" />
           <span>My Pickleball</span>
         </div>
         <Outlet />

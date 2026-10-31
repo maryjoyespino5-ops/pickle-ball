@@ -40,7 +40,7 @@ declare
   -- source control). The account gets a RANDOM, unusable password and MUST be
   -- reset by the operator before first login — see the header.
   admin_email text := 'alicarayad@admin.com';
-  admin_name  text := 'Alicayard Admin';
+  admin_name  text := 'Your Admin';
   v_user_id   uuid;
   v_random_pw text;
 begin
@@ -84,7 +84,7 @@ begin
       extensions.crypt(v_random_pw, extensions.gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}',
-      '{"full_name":"Alicayard Admin"}',
+      '{"full_name":"Your Admin"}',
       now(),
       now(),
       '',

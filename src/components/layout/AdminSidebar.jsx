@@ -39,7 +39,7 @@ export function AdminSidebar() {
   return (
     <aside className="admin-sidebar">
       <div className="admin-brand">
-        <img className="admin-brand-mark" src="/favicon.png" alt="Alicayard Pickle Ball logo" />
+        <img className="admin-brand-mark" src="/favicon.png" alt="Your Pickle Ball logo" />
         <span>
           Pickleball
           <br />

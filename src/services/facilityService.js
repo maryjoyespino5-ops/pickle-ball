@@ -10,10 +10,10 @@ function assertSupabase() {
 }
 
 const FALLBACK = {
-  facilityName: "Alicayard Pickle Ball",
+  facilityName: "Your Pickle Ball",
   address: "18 Palm Avenue, Makati, Metro Manila",
   contact: "+63 917 555 0188",
-  facilityEmail: "hello@alicayardpickleball.ph",
+  facilityEmail: "hello@yourpickleball.ph",
   opening: "07:00",
   closing: "22:00",
   defaultDuration: 1,

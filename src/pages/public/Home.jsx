@@ -94,7 +94,7 @@ export function Home() {
           </h2>
         </div>
         <p>
-          Alicayard Pickle Ball is a simple place for people who love the game. Pick
+          Your Pickle Ball is a simple place for people who love the game. Pick
           a time, bring your crew, and get straight to the fun. No fuss, no
           waiting around.
         </p>
